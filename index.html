@@ -4,14 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agente Finanças - Controle</title>
-    
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
     <style>
         :root { 
             --green: #2ecc71; --red: #e74c3c; --blue: #3498db;
@@ -59,16 +55,13 @@
 
     function registrarSW() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log("SW: Ativo"))
-            .catch(err => console.error("SW Erro:", err));
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW Erro:", err));
         }
     }
 
     async function carregarDados() {
         document.getElementById('status').innerText = "Conectando...";
         try {
-            // Bypass de cache com timestamp
             const response = await fetch(URL_API + "?t=" + new Date().getTime());
             const dados = await response.json();
             renderizar(dados);
@@ -90,8 +83,29 @@
 
             if(ehReceita) tEntrada += v; else tSaida += v;
 
-            // VERSÃO SIMPLIFICADA: Exibe a data exatamente como vem do Script (já formatada em GMT-3)
-            let dataBR = item.Data || "--/--";
+            // --- AJUSTE MANUAL DE DATA (OFFSET -3 HORAS) ---
+            let dataBR = "--/--";
+            if (item.Data) {
+                let dataStr = item.Data;
+                
+                // Converte formato BR (DD/MM/YYYY) para ISO se necessário
+                if (typeof dataStr === 'string' && dataStr.includes('/')) {
+                    const partes = dataStr.split(' ');
+                    const dataPartes = partes[0].split('/');
+                    dataStr = `${dataPartes[2]}-${dataPartes[1]}-${dataPartes[0]}T${partes[1] || '00:00:00'}`;
+                }
+
+                const d = new Date(dataStr);
+                if(!isNaN(d.getTime())) {
+                    // SUBTRAÇÃO MANUAL: Google (+3) -> Brasil (-3) = -3 horas de diferença
+                    const dataAjustada = new Date(d.getTime() - (3 * 3600000));
+                    
+                    dataBR = dataAjustada.toLocaleDateString('pt-BR') + " " + 
+                             dataAjustada.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                } else {
+                    dataBR = item.Data; // Fallback se tudo falhar
+                }
+            }
 
             html += `
                 <div class="item-transacao ${ehReceita ? 'entrada' : 'saida'}">
