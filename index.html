@@ -68,6 +68,7 @@
     async function carregarDados() {
         document.getElementById('status').innerText = "Conectando...";
         try {
+            // Bypass de cache com timestamp
             const response = await fetch(URL_API + "?t=" + new Date().getTime());
             const dados = await response.json();
             renderizar(dados);
@@ -89,31 +90,8 @@
 
             if(ehReceita) tEntrada += v; else tSaida += v;
 
-            // TRATAMENTO DE DATA COM FORÇA BRUTA PARA UTC -> BRASÍLIA
-            let dataBR = "--/--";
-            if (item.Data) {
-                let dataStr = item.Data;
-                
-                if (typeof dataStr === 'string' && dataStr.includes('/')) {
-                    const partes = dataStr.split(' ');
-                    const dataPartes = partes[0].split('/');
-                    // O "Z" no final avisa o navegador que o dado original é UTC
-                    dataStr = `${dataPartes[2]}-${dataPartes[1]}-${dataPartes[0]}T${partes[1] || '00:00:00'}Z`;
-                }
-
-                const d = new Date(dataStr);
-                
-                if(!isNaN(d.getTime())) {
-                    dataBR = d.toLocaleString('pt-BR', {
-                        timeZone: 'America/Sao_Paulo',
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                }
-            }
+            // VERSÃO SIMPLIFICADA: Exibe a data exatamente como vem do Script (já formatada em GMT-3)
+            let dataBR = item.Data || "--/--";
 
             html += `
                 <div class="item-transacao ${ehReceita ? 'entrada' : 'saida'}">
