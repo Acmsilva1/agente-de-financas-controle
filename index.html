@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente Finanças - Controle</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <meta name="theme-color" content="#121212">
+    <link rel="manifest" href="manifest.json">
+    
+    <style>
+        :root { 
+            --green: #2ecc71; --red: #e74c3c; --blue: #3498db;
+            --bg: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0; 
+            --border: #333333; --pink: #ff4081;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 15px; width: 100%; max-width: 600px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        
+        h2 { color: var(--pink); text-align: center; font-size: 18px; text-transform: uppercase; margin-bottom: 20px; }
+        
+        /* Dashboard de Métricas */
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .metric { background: var(--bg); padding: 15px; border-radius: 10px; text-align: center; border: 1px solid var(--border); }
+        .metric label { display: block; font-size: 11px; color: #888; text-transform: uppercase; }
+        .metric span { font-size: 20px; font-weight: bold; }
+        .metric.up { color: var(--green); }
+        .metric.down { color: var(--red); }
+
+        /* Lista de Transações */
+        .transacao-list { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .item-transacao { background: var(--bg); padding: 12px; border-radius: 8px; border-left: 4px solid var(--blue); display: flex; justify-content: space-between; align-items: center; }
+        .item-transacao.entrada { border-left-color: var(--green); }
+        .item-transacao.saida { border-left-color: var(--red); }
+        
+        .info { display: flex; flex-direction: column; }
+        .info .nome { font-weight: bold; font-size: 14px; }
+        .info .cat { font-size: 11px; color: #777; }
+        .valor { font-weight: bold; }
+        .ia-comment { font-size: 10px; font-style: italic; color: var(--blue); margin-top: 4px; display: block; }
+
+        .btn-update { background: var(--pink); color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        #status { font-size: 10px; text-align: center; margin-top: 10px; color: #555; }
+    </style>
+</head>
+<body onload="carregarDados()">
+
+<div class="card">
+    <h2>📊 Resumo Financeiro</h2>
+
+    <div class="dash-grid">
+        <div class="metric up">
+            <label>Entradas</label>
+            <span id="total-entradas">R$ 0,00</span>
+        </div>
+        <div class="metric down">
+            <label>Saídas</label>
+            <span id="total-saidas">R$ 0,00</span>
+        </div>
+    </div>
+
+    <div class="section">
+        <label style="color:var(--pink); font-size: 12px; font-weight: bold;">ÚLTIMOS LANÇAMENTOS</label>
+        <div id="lista" class="transacao-list">
+            <p style="text-align:center; color:#555;">Carregando dados...</p>
+        </div>
+    </div>
+
+    <button class="btn-update" onclick="carregarDados()">🔄 ATUALIZAR DASHBOARD</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    const URL_API = "https://script.google.com/macros/s/AKfycby1Fbd8maFgM7wBjEjWE8XfcmHK-uwF9ee2UlXfmzVqSNXUZfirYXBVC36sHzip6k_ZeA/exec";
+
+    async function carregarDados() {
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerText = "Sincronizando com Sheets...";
+        
+        try {
+            const response = await fetch(URL_API);
+            const dados = await response.json();
+            renderizar(dados);
+            statusDiv.innerText = "Última atualização: " + new Date().toLocaleTimeString();
+        } catch (error) {
+            console.error(error);
+            statusDiv.innerText = "Erro ao carregar dados.";
+        }
+    }
+
+    function renderizar(dados) {
+        const listaDiv = document.getElementById('lista');
+        const entradaSpan = document.getElementById('total-entradas');
+        const saidaSpan = document.getElementById('total-saidas');
+        
+        let html = "";
+        let tEntrada = 0;
+        let tSaida = 0;
+
+        // Pegamos os últimos 10 para não travar a tela
+        const ultimosDados = dados.reverse().slice(0, 15);
+
+        ultimosDados.forEach(item => {
+            const valor = parseFloat(item.Valor || 0);
+            const isEntrada = item.Tipo && item.Tipo.toLowerCase() === 'entrada';
+            
+            if(isEntrada) tEntrada += valor;
+            else tSaida += valor;
+
+            html += `
+                <div class="item-transacao ${isEntrada ? 'entrada' : 'saida'}">
+                    <div class="info">
+                        <span class="nome">${item.Item}</span>
+                        <span class="cat">${item.Categoria} | ${new Date(item.Data).toLocaleDateString()}</span>
+                        <span class="ia-comment">🤖 ${item.Comentario_da_IA || 'Sem análise'}</span>
+                    </div>
+                    <div class="valor">R$ ${valor.toFixed(2)}</div>
+                </div>
+            `;
+        });
+
+        listaDiv.innerHTML = html || "<p>Nenhum dado encontrado.</p>";
+        entradaSpan.innerText = `R$ ${tEntrada.toFixed(2)}`;
+        saidaSpan.innerText = `R$ ${tSaida.toFixed(2)}`;
+    }
+</script>
+</body>
+</html>
