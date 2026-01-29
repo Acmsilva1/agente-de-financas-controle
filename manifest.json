@@ -1,0 +1,23 @@
+{
+  "name": "Agente Finanças - Controle",
+  "short_name": "Agente Finanças",
+  "description": "Dashboard de monitoramento financeiro alimentado por IA",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#ff4081",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
