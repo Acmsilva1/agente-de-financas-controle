@@ -108,12 +108,19 @@
                 }
             }
 
-            if(index < 20) { // Mostrar apenas as últimas 20 na lista
+            if(index < 25) { // Aumentei para 25 para você ver mais itens
                 html += `
                     <div class="item-transacao ${ehReceita ? 'entrada' : 'saida'}">
                         <div class="info">
                             <span class="nome">${item.Item || 'Sem Nome'}</span>
                             <span class="detalhes">${item.Categoria || 'Geral'} • ${dataBR}</span>
+                            
+                            ${item.Comentario_da_IA ? 
+                                `<div style="font-size: 10px; color: #3498db; margin-top: 5px; background: #1a2a3a; padding: 5px; border-radius: 4px;">
+                                    🤖 ${item.Comentario_da_IA}
+                                 </div>` 
+                                : ''
+                            }
                         </div>
                         <div class="valor">${ehReceita ? '+' : '-'} R$ ${v.toFixed(2)}</div>
                     </div>`;
