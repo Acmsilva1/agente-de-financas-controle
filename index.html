@@ -4,191 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agente Finanças - Controle</title>
-    
     <link rel="icon" type="image/png" href="logo.png">
-    <link rel="apple-touch-icon" href="logo.png">
-    <meta name="theme-color" content="#121212">
     <link rel="manifest" href="manifest.json">
-    
+    <meta name="theme-color" content="#121212">
     <style>
         :root { 
             --green: #2ecc71; --red: #e74c3c; --blue: #3498db;
             --bg: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0; 
             --border: #333333; --pink: #ff4081;
         }
-
-        body { 
-            font-family: 'Segoe UI', Roboto, sans-serif; 
-            background: var(--bg); 
-            color: var(--text-main); 
-            margin: 0; 
-            padding: 15px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-        }
-
-        .card { 
-            background: var(--card-bg); 
-            padding: 20px; 
-            border-radius: 20px; 
-            width: 100%; 
-            max-width: 500px; 
-            border: 1px solid var(--border); 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-        }
-        
-        h2 { color: var(--pink); text-align: center; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
-        
-        /* Dashboard */
-        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 25px; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 20px; width: 100%; max-width: 500px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h2 { color: var(--pink); text-align: center; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; }
+        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
         .metric { background: #181818; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
-        .metric label { display: block; font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+        .metric label { display: block; font-size: 10px; color: #888; text-transform: uppercase; }
         .metric span { font-size: 18px; font-weight: bold; }
         .metric.up { color: var(--green); }
         .metric.down { color: var(--red); }
-
-        /* Lista de Lançamentos */
-        .section-title { color: var(--pink); font-size: 11px; font-weight: bold; margin-bottom: 10px; display: block; }
-        .transacao-list { display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
-        
-        /* Custom Scrollbar */
-        .transacao-list::-webkit-scrollbar { width: 4px; }
-        .transacao-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-
-        .item-transacao { 
-            background: #252525; 
-            padding: 12px; 
-            border-radius: 10px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            border-left: 4px solid var(--blue);
-        }
+        .transacao-list { display: flex; flex-direction: column; gap: 8px; max-height: 450px; overflow-y: auto; }
+        .item-transacao { background: #252525; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--blue); }
         .item-transacao.entrada { border-left-color: var(--green); }
         .item-transacao.saida { border-left-color: var(--red); }
-        
-        .info { display: flex; flex-direction: column; gap: 2px; }
-        .info .nome { font-weight: bold; font-size: 14px; color: #fff; }
+        .info { display: flex; flex-direction: column; }
+        .info .nome { font-weight: bold; font-size: 14px; }
         .info .detalhes { font-size: 10px; color: #aaa; }
         .valor { font-weight: bold; font-size: 14px; }
-        .ia-box { font-size: 10px; color: var(--blue); margin-top: 5px; background: #1a2a3a; padding: 5px; border-radius: 4px; display: block; }
-
-        .btn-update { 
-            background: var(--pink); 
-            color: white; 
-            border: none; 
-            padding: 15px; 
-            border-radius: 12px; 
-            width: 100%; 
-            font-weight: bold; 
-            cursor: pointer; 
-            margin-top: 20px;
-            transition: opacity 0.2s;
-        }
-        .btn-update:active { opacity: 0.8; }
-        
-        #status { font-size: 9px; text-align: center; margin-top: 10px; color: #444; font-style: italic; }
+        .ia-box { font-size: 10px; color: var(--blue); margin-top: 5px; background: #1a2a3a; padding: 5px; border-radius: 4px; }
+        .btn-update { background: var(--pink); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        #status { font-size: 9px; text-align: center; margin-top: 10px; color: #444; }
     </style>
 </head>
 <body onload="init()">
-
 <div class="card">
     <h2>AGENT FINANÇAS AI</h2>
-
     <div class="dash-grid">
-        <div class="metric up">
-            <label>Receitas</label>
-            <span id="total-entradas">R$ 0,00</span>
-        </div>
-        <div class="metric down">
-            <label>Despesas</label>
-            <span id="total-saidas">R$ 0,00</span>
-        </div>
+        <div class="metric up"><label>Receitas</label><span id="total-entradas">R$ 0,00</span></div>
+        <div class="metric down"><label>Despesas</label><span id="total-saidas">R$ 0,00</span></div>
     </div>
-
-    <span class="section-title">ÚLTIMOS MOVIMENTOS</span>
-    <div id="lista" class="transacao-list">
-        <p style="text-align:center; color:#555; font-size: 12px;">Buscando dados na planilha...</p>
-    </div>
-
+    <div id="lista" class="transacao-list"></div>
     <button class="btn-update" onclick="carregarDados()">🔄 ATUALIZAR AGORA</button>
     <div id="status">Sincronizado</div>
 </div>
-
 <script>
     const URL_API = "https://script.google.com/macros/s/AKfycby1Fbd8maFgM7wBjEjWE8XfcmHK-uwF9ee2UlXfmzVqSNXUZfirYXBVC36sHzip6k_ZeA/exec";
 
-    function init() {
-        carregarDados();
-        registrarSW();
-    }
+    function init() { carregarDados(); registrarSW(); }
 
-    // Registro do Service Worker para PWA
     function registrarSW() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log("SW: Rodando"))
-            .catch(err => console.log("SW Erro:", err));
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW Erro:", err));
         }
     }
 
     async function carregarDados() {
-        const statusDiv = document.getElementById('status');
-        const listaDiv = document.getElementById('lista');
-        statusDiv.innerText = "Conectando ao agente...";
-        
+        document.getElementById('status').innerText = "Conectando...";
         try {
             const response = await fetch(URL_API);
             const dados = await response.json();
-            
-            if (dados.error) throw new Error(dados.error);
-            
             renderizar(dados);
-            statusDiv.innerText = "Sincronizado em: " + new Date().toLocaleTimeString();
-        } catch (error) {
-            listaDiv.innerHTML = `<p style="color:var(--red); font-size:12px;">Erro: Verifique a publicação do Script.</p>`;
-            statusDiv.innerText = "Falha na rede.";
-        }
+            document.getElementById('status').innerText = "Última atualização: " + new Date().toLocaleTimeString();
+        } catch (e) { document.getElementById('status').innerText = "Erro na conexão."; }
     }
 
     function renderizar(dados) {
         const listaDiv = document.getElementById('lista');
-        const entradaSpan = document.getElementById('total-entradas');
-        const saidaSpan = document.getElementById('total-saidas');
-        
-        let html = "";
-        let tEntrada = 0;
-        let tSaida = 0;
+        let html = ""; let tEntrada = 0; let tSaida = 0;
 
-        // Inverte para ver o mais novo primeiro e limita a 20 registros
-        const logs = dados.slice().reverse().slice(0, 20);
-
-        logs.forEach(item => {
+        dados.slice().reverse().slice(0, 25).forEach(item => {
             const v = parseFloat(item.Valor || 0);
-            const tipo = (item.Tipo || "").toLowerCase();
-            const isEntrada = tipo === 'entrada';
-            
-            if(isEntrada) tEntrada += v;
-            else tSaida += v;
+            // Normalização: ignora espaços e case
+            const tipo = (item.Tipo || "").toString().toLowerCase().trim();
+            const ehReceita = tipo === 'receita' || tipo === 'entrada';
 
-            const dataFormatada = item.Data ? new Date(item.Data).toLocaleDateString('pt-BR') : '--/--';
+            if(ehReceita) tEntrada += v; else tSaida += v;
+
+            // Tratamento de Data ISO (vinda do script corrigido)
+            let dataBR = "--/--";
+            if (item.Data) {
+                const d = new Date(item.Data);
+                if(!isNaN(d)) dataBR = d.toLocaleDateString('pt-BR') + " " + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+            }
 
             html += `
-                <div class="item-transacao ${isEntrada ? 'entrada' : 'saida'}">
+                <div class="item-transacao ${ehReceita ? 'entrada' : 'saida'}">
                     <div class="info">
                         <span class="nome">${item.Item || 'Sem Nome'}</span>
-                        <span class="detalhes">${item.Categoria || 'Geral'} • ${dataFormatada}</span>
-                        ${item.Comentario_da_IA ? `<span class="ia-box">🤖 ${item.Comentario_da_IA}</span>` : ''}
+                        <span class="detalhes">${item.Categoria || 'Geral'} • ${dataBR}</span>
+                        ${item.Comentario_da_IA ? `<div class="ia-box">🤖 ${item.Comentario_da_IA}</div>` : ''}
                     </div>
-                    <div class="valor">R$ ${v.toFixed(2)}</div>
-                </div>
-            `;
+                    <div class="valor">${ehReceita ? '+' : '-'} R$ ${v.toFixed(2)}</div>
+                </div>`;
         });
-
-        listaDiv.innerHTML = html || "<p style='text-align:center;'>Nenhum dado na aba.</p>";
-        entradaSpan.innerText = `R$ ${tEntrada.toFixed(2)}`;
-        saidaSpan.innerText = `R$ ${tSaida.toFixed(2)}`;
+        listaDiv.innerHTML = html;
+        document.getElementById('total-entradas').innerText = `R$ ${tEntrada.toFixed(2)}`;
+        document.getElementById('total-saidas').innerText = `R$ ${tSaida.toFixed(2)}`;
     }
 </script>
 </body>
