@@ -1,4 +1,4 @@
-const cacheName = 'financas-v37'; 
+const cacheName = 'financas-v38'; 
 const assets = [
   './',
   './index.html',
