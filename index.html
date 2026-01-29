@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agente Finanças - Controle</title>
+    
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <style>
         :root { 
             --green: #2ecc71; --red: #e74c3c; --blue: #3498db;
@@ -47,21 +51,25 @@
     <button class="btn-update" onclick="carregarDados()">🔄 ATUALIZAR AGORA</button>
     <div id="status">Sincronizado</div>
 </div>
+
 <script>
+    // URL da sua nova implantação
     const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec";
 
     function init() { carregarDados(); registrarSW(); }
 
     function registrarSW() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW Erro:", err));
+            navigator.serviceWorker.register('./sw.js')
+            .then(() => console.log("SW: Ativo"))
+            .catch(err => console.log("SW Erro:", err));
         }
     }
 
     async function carregarDados() {
         document.getElementById('status').innerText = "Conectando...";
         try {
-            // Adicionamos um timestamp para evitar cache do navegador na requisição
+            // Timestamp (?t=...) adicionado para forçar o bypass de cache da rede
             const response = await fetch(URL_API + "?t=" + new Date().getTime());
             const dados = await response.json();
             renderizar(dados);
@@ -76,6 +84,7 @@
         const listaDiv = document.getElementById('lista');
         let html = ""; let tEntrada = 0; let tSaida = 0;
 
+        // Inverte para mostrar os mais recentes primeiro
         dados.slice().reverse().slice(0, 25).forEach(item => {
             const v = parseFloat(item.Valor || 0);
             const tipo = (item.Tipo || "").toString().toLowerCase().trim();
@@ -83,22 +92,30 @@
 
             if(ehReceita) tEntrada += v; else tSaida += v;
 
-            // TRATAMENTO REFORÇADO DE DATA
+            // TRATAMENTO DE DATA COM AJUSTE PARA FUSO BRASÍLIA (GMT-3)
             let dataBR = "--/--";
             if (item.Data) {
                 let dataStr = item.Data;
-                // Se a data vier com barras (formato BR), o JS do navegador pode falhar.
-                // Vamos tentar converter "DD/MM/YYYY HH:mm:ss" para algo que o Date entenda
+                
+                // Se o Google mandar com barras, normalizamos para ISO antes de criar o objeto Date
                 if (typeof dataStr === 'string' && dataStr.includes('/')) {
                     const partes = dataStr.split(' ');
                     const dataPartes = partes[0].split('/');
-                    // Reorganiza para YYYY-MM-DD
                     dataStr = `${dataPartes[2]}-${dataPartes[1]}-${dataPartes[0]}T${partes[1] || '00:00:00'}`;
                 }
 
                 const d = new Date(dataStr);
+                
                 if(!isNaN(d.getTime())) {
-                    dataBR = d.toLocaleDateString('pt-BR') + " " + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                    // Força a exibição no fuso de São Paulo, ignorando o UTC do bot
+                    dataBR = d.toLocaleString('pt-BR', {
+                        timeZone: 'America/Sao_Paulo',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
                 }
             }
 
