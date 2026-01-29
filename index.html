@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
-
     <style>
         :root { 
             --green: #2ecc71; --red: #e74c3c; --blue: #3498db;
@@ -18,21 +17,21 @@
         .card { background: var(--card-bg); padding: 20px; border-radius: 20px; width: 100%; max-width: 500px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
         .controles { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; }
         select, button { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 10px; cursor: pointer; flex: 1; }
-        .transacao { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); position: relative; }
-        .info { display: flex; flex-direction: column; flex: 1; }
-        .valor { font-weight: bold; margin-left: 10px; }
-        .btn-delete { color: var(--red); background: none; border: none; font-size: 1.2rem; cursor: pointer; margin-left: 15px; padding: 5px; }
-        .btn-delete:hover { transform: scale(1.2); }
-        #loading { color: var(--pink); font-weight: bold; margin: 10px; display: none; }
+        .transacao { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); }
+        .info { flex: 1; }
+        .valor { font-weight: bold; min-width: 80px; text-align: right; margin: 0 10px; }
+        .acoes { display: flex; gap: 8px; }
+        .btn-acao { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 5px; }
+        #loading { color: var(--pink); font-weight: bold; display: none; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <canvas id="meuGrafico"></canvas>
-        <div style="display: flex; justify-content: space-around; margin-top: 20px; text-align: center;">
-            <div><small>Receitas</small><div id="total-entradas" style="color: var(--green); font-size: 1.2rem; font-weight: bold;">R$ 0,00</div></div>
-            <div><small>Despesas</small><div id="total-saidas" style="color: var(--red); font-size: 1.2rem; font-weight: bold;">R$ 0,00</div></div>
+        <div style="display: flex; justify-content: space-around; margin-top: 20px;">
+            <div id="total-entradas" style="color: var(--green); font-weight: bold;">R$ 0,00</div>
+            <div id="total-saidas" style="color: var(--red); font-weight: bold;">R$ 0,00</div>
         </div>
     </div>
 
@@ -44,96 +43,86 @@
         <button onclick="carregarDados()">🔄 Atualizar</button>
     </div>
 
-    <div id="loading">Processando...</div>
-
-    <div class="card" id="lista-transacoes">
-        </div>
+    <div id="loading">Conectando à planilha...</div>
+    <div class="card" id="lista-transacoes" style="padding: 10px;"></div>
 
     <script>
-        // COLOQUE AQUI A URL DA SUA NOVA IMPLANTAÇÃO DO GAS
-        const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
+        const URL_API = "SUA_NOVA_URL_DO_GAS_AQUI"; 
         let myChart = null;
 
         async function carregarDados() {
-            const loading = document.getElementById('loading');
+            document.getElementById('loading').style.display = 'block';
             const filtro = document.getElementById('filtroTempo').value;
-            loading.style.display = 'block';
-
             try {
-                const response = await fetch(`${URL_API}?filtro=${filtro}`);
-                const dados = await response.json();
+                const res = await fetch(`${URL_API}?filtro=${filtro}`);
+                const dados = await res.json();
                 renderizar(dados);
-            } catch (error) {
-                console.error("Erro ao carregar:", error);
-            } finally {
-                loading.style.display = 'none';
-            }
+            } catch (e) { console.error(e); }
+            finally { document.getElementById('loading').style.display = 'none'; }
         }
 
         async function excluirRegistro(id) {
-            if (!confirm(`Deseja realmente apagar o registro de ${id}?`)) return;
-            
+            if (!confirm("Deletar este registro permanentemente?")) return;
+            executarAcao(`action=delete&id=${encodeURIComponent(id)}`);
+        }
+
+        async function editarRegistro(id, valorAtual) {
+            const novo = prompt("Novo valor (use ponto para decimais):", valorAtual);
+            if (novo !== null && novo !== "" && !isNaN(novo)) {
+                executarAcao(`action=update&id=${encodeURIComponent(id)}&novoValor=${novo}`);
+            }
+        }
+
+        async function executarAcao(query) {
             document.getElementById('loading').style.display = 'block';
             try {
-                const response = await fetch(`${URL_API}?action=delete&id=${encodeURIComponent(id)}`);
-                const res = await response.json();
-                if (res.status === "sucesso") carregarDados();
-                else alert("Erro: " + res.msg);
-            } catch (e) {
-                alert("Falha na comunicação com a planilha.");
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
+                const res = await fetch(`${URL_API}?${query}`);
+                const status = await res.json();
+                if (status.status === "sucesso") carregarDados();
+            } catch (e) { alert("Erro na operação"); }
+            finally { document.getElementById('loading').style.display = 'none'; }
         }
 
         function renderizar(dados) {
             const listaDiv = document.getElementById('lista-transacoes');
-            let html = "";
-            let tEntrada = 0, tSaida = 0;
+            let html = "", tEntrada = 0, tSaida = 0;
 
             dados.reverse().forEach(item => {
                 const v = parseFloat(item.Valor) || 0;
                 const ehReceita = item.Tipo === "Receita";
-                
-                if (ehReceita) tEntrada += v;
-                else tSaida += v;
+                if (ehReceita) tEntrada += v; else tSaida += v;
 
                 html += `
                 <div class="transacao">
                     <div class="info">
-                        <small style="color: #888;">${item.Data}</small>
+                        <small style="color:#888">${item.Data}</small><br>
                         <strong>${item.Item}</strong>
-                        <span style="font-size: 0.8rem; color: var(--blue);">${item.Categoria}</span>
-                        ${item.Comentario_da_IA ? `<div style="font-size: 10px; color: #aaa; margin-top: 4px;">🤖 ${item.Comentario_da_IA}</div>` : ''}
                     </div>
                     <div class="valor" style="color: ${ehReceita ? 'var(--green)' : 'var(--red)'}">
-                        ${ehReceita ? '+' : '-'} R$ ${v.toFixed(2)}
+                        R$ ${v.toFixed(2)}
                     </div>
-                    <button class="btn-delete" onclick="excluirRegistro('${item.Data}')">🗑️</button>
+                    <div class="acoes">
+                        <button class="btn-acao" onclick="editarRegistro('${item.Data}', '${v}')">✏️</button>
+                        <button class="btn-acao" onclick="excluirRegistro('${item.Data}')">🗑️</button>
+                    </div>
                 </div>`;
             });
-
-            listaDiv.innerHTML = html || "<p style='text-align:center'>Nenhum registro encontrado.</p>";
+            listaDiv.innerHTML = html || "Sem registros.";
             document.getElementById('total-entradas').innerText = `R$ ${tEntrada.toFixed(2)}`;
             document.getElementById('total-saidas').innerText = `R$ ${tSaida.toFixed(2)}`;
             atualizarGrafico(tEntrada, tSaida);
         }
 
-        function atualizarGrafico(entradas, saidas) {
+        function atualizarGrafico(e, s) {
             const ctx = document.getElementById('meuGrafico').getContext('2d');
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Receitas', 'Despesas'],
-                    datasets: [{
-                        data: [entradas, saidas],
-                        backgroundColor: ['#2ecc71', '#e74c3c'],
-                        borderColor: '#1e1e1e',
-                        borderWidth: 2
-                    }]
+                    labels: ['Ganhos', 'Gastos'],
+                    datasets: [{ data: [e, s], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }]
                 },
-                options: { plugins: { legend: { display: false } }, cutout: '75%' }
+                options: { plugins: { legend: { display: false } }, cutout: '80%' }
             });
         }
 
