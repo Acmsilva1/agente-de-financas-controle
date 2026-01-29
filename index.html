@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agente Finanças - Dashboard</title>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
 
@@ -17,145 +15,129 @@
             --border: #333333; --pink: #ff4081;
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 20px; width: 100%; max-width: 500px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { color: var(--pink); text-align: center; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; }
-        
-        .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
-        .metric { background: #181818; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
-        .metric label { display: block; font-size: 10px; color: #888; text-transform: uppercase; }
-        .metric span { font-size: 18px; font-weight: bold; }
-        .metric.up { color: var(--green); }
-        .metric.down { color: var(--red); }
-
-        /* Estilo do Gráfico */
-        .chart-container { position: relative; margin: 20px auto; height: 200px; width: 200px; }
-
-        .transacao-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; margin-top: 20px;}
-        .item-transacao { background: #252525; padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--blue); }
-        .item-transacao.entrada { border-left-color: var(--green); }
-        .item-transacao.saida { border-left-color: var(--red); }
-        .info { display: flex; flex-direction: column; }
-        .info .nome { font-weight: bold; font-size: 14px; }
-        .info .detalhes { font-size: 10px; color: #aaa; }
-        .valor { font-weight: bold; font-size: 14px; }
-        
-        .btn-update { background: var(--pink); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 20px; }
-        #status { font-size: 9px; text-align: center; margin-top: 10px; color: #444; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 20px; width: 100%; max-width: 500px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        .controles { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; }
+        select, button { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 10px; cursor: pointer; flex: 1; }
+        .transacao { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); position: relative; }
+        .info { display: flex; flex-direction: column; flex: 1; }
+        .valor { font-weight: bold; margin-left: 10px; }
+        .btn-delete { color: var(--red); background: none; border: none; font-size: 1.2rem; cursor: pointer; margin-left: 15px; padding: 5px; }
+        .btn-delete:hover { transform: scale(1.2); }
+        #loading { color: var(--pink); font-weight: bold; margin: 10px; display: none; }
     </style>
 </head>
-<body onload="init()">
+<body>
 
-<div class="card">
-    <h2>AGENT FINANÇAS AI</h2>
-    
-    <div class="dash-grid">
-        <div class="metric up"><label>Receitas</label><span id="total-entradas">R$ 0,00</span></div>
-        <div class="metric down"><label>Despesas</label><span id="total-saidas">R$ 0,00</span></div>
-    </div>
-
-    <div class="chart-container">
+    <div class="card">
         <canvas id="meuGrafico"></canvas>
+        <div style="display: flex; justify-content: space-around; margin-top: 20px; text-align: center;">
+            <div><small>Receitas</small><div id="total-entradas" style="color: var(--green); font-size: 1.2rem; font-weight: bold;">R$ 0,00</div></div>
+            <div><small>Despesas</small><div id="total-saidas" style="color: var(--red); font-size: 1.2rem; font-weight: bold;">R$ 0,00</div></div>
+        </div>
     </div>
 
-    <div id="lista" class="transacao-list"></div>
-    
-    <button class="btn-update" onclick="carregarDados()">🔄 ATUALIZAR AGORA</button>
-    <div id="status">Sincronizado</div>
-</div>
+    <div class="controles">
+        <select id="filtroTempo" onchange="carregarDados()">
+            <option value="tudo">Histórico Total</option>
+            <option value="mes" selected>Mês Atual</option>
+        </select>
+        <button onclick="carregarDados()">🔄 Atualizar</button>
+    </div>
 
-<script>
-    const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec";
-    let myChart = null;
+    <div id="loading">Processando...</div>
 
-    function init() { carregarDados(); registrarSW(); }
+    <div class="card" id="lista-transacoes">
+        </div>
 
-    function registrarSW() {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
-        }
-    }
+    <script>
+        // COLOQUE AQUI A URL DA SUA NOVA IMPLANTAÇÃO DO GAS
+        const URL_API = "SUA_NOVA_URL_DO_GOOGLE_APPS_SCRIPT"; 
+        let myChart = null;
 
-    async function carregarDados() {
-        document.getElementById('status').innerText = "Conectando...";
-        try {
-            const response = await fetch(URL_API + "?t=" + new Date().getTime());
-            const dados = await response.json();
-            renderizar(dados);
-            document.getElementById('status').innerText = "Sincronizado: " + new Date().toLocaleTimeString();
-        } catch (e) { 
-            document.getElementById('status').innerText = "Erro ao carregar."; 
-        }
-    }
+        async function carregarDados() {
+            const loading = document.getElementById('loading');
+            const filtro = document.getElementById('filtroTempo').value;
+            loading.style.display = 'block';
 
-    function renderizar(dados) {
-        const listaDiv = document.getElementById('lista');
-        let html = ""; let tEntrada = 0; let tSaida = 0;
-
-        dados.slice().reverse().forEach((item, index) => {
-            const v = parseFloat(item.Valor || 0);
-            const tipo = (item.Tipo || "").toString().toLowerCase().trim();
-            const ehReceita = tipo === 'receita' || tipo === 'entrada';
-
-            if(ehReceita) tEntrada += v; else tSaida += v;
-
-            // Mantendo nosso Hacker de Horário (-3h)
-            let dataBR = "--/--";
-            if (item.Data) {
-                let d = new Date(item.Data.includes('/') ? item.Data.split(' ')[0].split('/').reverse().join('-') + 'T' + (item.Data.split(' ')[1] || '00:00:00') : item.Data);
-                if(!isNaN(d.getTime())) {
-                    const dataAjustada = new Date(d.getTime() - (3 * 3600000));
-                    dataBR = dataAjustada.toLocaleDateString('pt-BR') + " " + dataAjustada.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                }
+            try {
+                const response = await fetch(`${URL_API}?filtro=${filtro}`);
+                const dados = await response.json();
+                renderizar(dados);
+            } catch (error) {
+                console.error("Erro ao carregar:", error);
+            } finally {
+                loading.style.display = 'none';
             }
+        }
 
-            if(index < 25) { // Aumentei para 25 para você ver mais itens
+        async function excluirRegistro(id) {
+            if (!confirm(`Deseja realmente apagar o registro de ${id}?`)) return;
+            
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const response = await fetch(`${URL_API}?action=delete&id=${encodeURIComponent(id)}`);
+                const res = await response.json();
+                if (res.status === "sucesso") carregarDados();
+                else alert("Erro: " + res.msg);
+            } catch (e) {
+                alert("Falha na comunicação com a planilha.");
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function renderizar(dados) {
+            const listaDiv = document.getElementById('lista-transacoes');
+            let html = "";
+            let tEntrada = 0, tSaida = 0;
+
+            dados.reverse().forEach(item => {
+                const v = parseFloat(item.Valor) || 0;
+                const ehReceita = item.Tipo === "Receita";
+                
+                if (ehReceita) tEntrada += v;
+                else tSaida += v;
+
                 html += `
-                    <div class="item-transacao ${ehReceita ? 'entrada' : 'saida'}">
-                        <div class="info">
-                            <span class="nome">${item.Item || 'Sem Nome'}</span>
-                            <span class="detalhes">${item.Categoria || 'Geral'} • ${dataBR}</span>
-                            
-                            ${item.Comentario_da_IA ? 
-                                `<div style="font-size: 10px; color: #3498db; margin-top: 5px; background: #1a2a3a; padding: 5px; border-radius: 4px;">
-                                    🤖 ${item.Comentario_da_IA}
-                                 </div>` 
-                                : ''
-                            }
-                        </div>
-                        <div class="valor">${ehReceita ? '+' : '-'} R$ ${v.toFixed(2)}</div>
-                    </div>`;
-            }
-        });
+                <div class="transacao">
+                    <div class="info">
+                        <small style="color: #888;">${item.Data}</small>
+                        <strong>${item.Item}</strong>
+                        <span style="font-size: 0.8rem; color: var(--blue);">${item.Categoria}</span>
+                        ${item.Comentario_da_IA ? `<div style="font-size: 10px; color: #aaa; margin-top: 4px;">🤖 ${item.Comentario_da_IA}</div>` : ''}
+                    </div>
+                    <div class="valor" style="color: ${ehReceita ? 'var(--green)' : 'var(--red)'}">
+                        ${ehReceita ? '+' : '-'} R$ ${v.toFixed(2)}
+                    </div>
+                    <button class="btn-delete" onclick="excluirRegistro('${item.Data}')">🗑️</button>
+                </div>`;
+            });
 
-        listaDiv.innerHTML = html;
-        document.getElementById('total-entradas').innerText = `R$ ${tEntrada.toFixed(2)}`;
-        document.getElementById('total-saidas').innerText = `R$ ${tSaida.toFixed(2)}`;
+            listaDiv.innerHTML = html || "<p style='text-align:center'>Nenhum registro encontrado.</p>";
+            document.getElementById('total-entradas').innerText = `R$ ${tEntrada.toFixed(2)}`;
+            document.getElementById('total-saidas').innerText = `R$ ${tSaida.toFixed(2)}`;
+            atualizarGrafico(tEntrada, tSaida);
+        }
 
-        atualizarGrafico(tEntrada, tSaida);
-    }
+        function atualizarGrafico(entradas, saidas) {
+            const ctx = document.getElementById('meuGrafico').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Receitas', 'Despesas'],
+                    datasets: [{
+                        data: [entradas, saidas],
+                        backgroundColor: ['#2ecc71', '#e74c3c'],
+                        borderColor: '#1e1e1e',
+                        borderWidth: 2
+                    }]
+                },
+                options: { plugins: { legend: { display: false } }, cutout: '75%' }
+            });
+        }
 
-    function atualizarGrafico(entradas, saidas) {
-        const ctx = document.getElementById('meuGrafico').getContext('2d');
-        
-        if (myChart) { myChart.destroy(); }
-
-        myChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Receitas', 'Despesas'],
-                datasets: [{
-                    data: [entradas, saidas],
-                    backgroundColor: ['#2ecc71', '#e74c3c'],
-                    borderColor: '#1e1e1e',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                plugins: { legend: { display: false } },
-                cutout: '70%'
-            }
-        });
-    }
-</script>
+        window.onload = carregarDados;
+    </script>
 </body>
 </html>
