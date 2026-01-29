@@ -1,4 +1,4 @@
-const cacheName = 'finanças-v20'; // Mudamos para v5 para forçar a atualização
+const cacheName = 'finanças-v20';
 const assets = [
   './',
   './index.html',
