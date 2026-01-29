@@ -4,14 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agente Finanças - Controle</title>
-    
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
     <style>
         :root { 
             --green: #2ecc71; --red: #e74c3c; --blue: #3498db;
@@ -51,28 +47,29 @@
     <button class="btn-update" onclick="carregarDados()">🔄 ATUALIZAR AGORA</button>
     <div id="status">Sincronizado</div>
 </div>
-
 <script>
-    const URL_API = "https://script.google.com/macros/s/AKfycby1Fbd8maFgM7wBjEjWE8XfcmHK-uwF9ee2UlXfmzVqSNXUZfirYXBVC36sHzip6k_ZeA/exec";
+    const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec";
 
     function init() { carregarDados(); registrarSW(); }
 
     function registrarSW() {
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-            .then(() => console.log("SW: Ativo"))
-            .catch(err => console.log("SW Erro:", err));
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW Erro:", err));
         }
     }
 
     async function carregarDados() {
         document.getElementById('status').innerText = "Conectando...";
         try {
-            const response = await fetch(URL_API);
+            // Adicionamos um timestamp para evitar cache do navegador na requisição
+            const response = await fetch(URL_API + "?t=" + new Date().getTime());
             const dados = await response.json();
             renderizar(dados);
             document.getElementById('status').innerText = "Última atualização: " + new Date().toLocaleTimeString();
-        } catch (e) { document.getElementById('status').innerText = "Erro na conexão."; }
+        } catch (e) { 
+            document.getElementById('status').innerText = "Erro na conexão."; 
+            console.error(e);
+        }
     }
 
     function renderizar(dados) {
@@ -86,10 +83,23 @@
 
             if(ehReceita) tEntrada += v; else tSaida += v;
 
+            // TRATAMENTO REFORÇADO DE DATA
             let dataBR = "--/--";
             if (item.Data) {
-                const d = new Date(item.Data);
-                if(!isNaN(d)) dataBR = d.toLocaleDateString('pt-BR') + " " + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                let dataStr = item.Data;
+                // Se a data vier com barras (formato BR), o JS do navegador pode falhar.
+                // Vamos tentar converter "DD/MM/YYYY HH:mm:ss" para algo que o Date entenda
+                if (typeof dataStr === 'string' && dataStr.includes('/')) {
+                    const partes = dataStr.split(' ');
+                    const dataPartes = partes[0].split('/');
+                    // Reorganiza para YYYY-MM-DD
+                    dataStr = `${dataPartes[2]}-${dataPartes[1]}-${dataPartes[0]}T${partes[1] || '00:00:00'}`;
+                }
+
+                const d = new Date(dataStr);
+                if(!isNaN(d.getTime())) {
+                    dataBR = d.toLocaleDateString('pt-BR') + " " + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+                }
             }
 
             html += `
