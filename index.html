@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças - Dashboard</title>
+    <title>Agente Finanças - Controle</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
@@ -64,12 +64,12 @@
 
     <div class="controles">
         <select id="filtroTempo" onchange="filtrarERenderizar()">
-            <option value="mes_atual">A carregar meses...</option>
+            <option value="mes_atual">Carregando meses...</option>
         </select>
         <button onclick="carregarDados()">🔄 Sincronizar</button>
     </div>
 
-    <div id="loading">📡 A aceder à Planilha do André...</div>
+    <div id="loading">📡 Buscando dados...</div>
     <div class="card" id="lista-transacoes"></div>
 
     <script>
@@ -84,7 +84,7 @@
                 todosOsDados = await res.json();
                 popularSeletorMeses(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { alert("Erro de sincronização. Verifica o GAS."); }
+            } catch (e) { alert("Erro de sincronização!"); }
             finally { document.getElementById('loading').style.display = 'none'; }
         }
 
