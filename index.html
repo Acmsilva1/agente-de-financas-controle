@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças</title>
+    <title>Agente Finanças - Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
@@ -14,21 +14,36 @@
             --border: #333333; --pink: #ff4081;
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .chart-container { width: 170px; height: 170px; margin: 0 auto; position: relative; }
+        
+        /* Gráfico e Saldo Centralizado */
+        .chart-container { width: 185px; height: 185px; margin: 0 auto; position: relative; }
+        #saldo-info {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center; pointer-events: none;
+        }
+        #saldo-valor { font-size: 1.2rem; font-weight: bold; display: block; }
+        #saldo-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
         .card { background: var(--card-bg); padding: 15px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 15px; box-sizing: border-box; }
         .controles { display: flex; gap: 8px; margin-bottom: 10px; width: 100%; max-width: 450px; }
-        select, button { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 10px; cursor: pointer; flex: 1; font-size: 0.9rem; }
+        select, button { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.9rem; }
+        
         .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
         .info { flex: 1; }
-        .info strong { display: block; font-size: 0.95rem; }
+        .info strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
         .info small { color: #888; font-size: 0.75rem; }
-        .valor-area { text-align: right; min-width: 95px; }
-        .valor { font-weight: bold; font-size: 0.95rem; }
-        .ai-comment { font-size: 11px; color: var(--blue); margin-top: 6px; background: rgba(52, 152, 219, 0.1); padding: 6px; border-radius: 6px; border-left: 3px solid var(--blue); line-height: 1.3; }
-        .acoes { display: flex; gap: 12px; margin-top: 8px; justify-content: flex-end; }
-        .btn-acao { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 2px; opacity: 0.6; }
+        
+        .valor-area { text-align: right; min-width: 100px; }
+        .valor { font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
+        
+        .ai-comment { font-size: 11px; color: var(--blue); margin-top: 8px; background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; border-left: 3px solid var(--blue); line-height: 1.4; }
+        
+        .acoes { display: flex; gap: 12px; justify-content: flex-end; }
+        .btn-acao { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; opacity: 0.6; transition: 0.2s; }
         .btn-acao:hover { opacity: 1; transform: scale(1.1); }
-        #loading { color: var(--pink); font-size: 0.8rem; font-weight: bold; display: none; margin-bottom: 5px; }
+        
+        #loading { color: var(--pink); font-size: 0.8rem; font-weight: bold; display: none; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -36,22 +51,25 @@
     <div class="card">
         <div class="chart-container">
             <canvas id="meuGrafico"></canvas>
+            <div id="saldo-info">
+                <span id="saldo-label">Líquido</span>
+                <span id="saldo-valor">R$ 0</span>
+            </div>
         </div>
-        <div style="display: flex; justify-content: space-around; margin-top: 15px; text-align: center;">
-            <div><small style="color:#888">Entradas</small><div id="total-entradas" style="color: var(--green); font-weight: bold;">R$ 0</div></div>
-            <div><small style="color:#888">Saídas</small><div id="total-saidas" style="color: var(--red); font-weight: bold;">R$ 0</div></div>
+        <div style="display: flex; justify-content: space-around; margin-top: 20px; text-align: center;">
+            <div><small style="color:#888">Receitas</small><div id="total-entradas" style="color: var(--green); font-weight: bold;">R$ 0</div></div>
+            <div><small style="color:#888">Despesas</small><div id="total-saidas" style="color: var(--red); font-weight: bold;">R$ 0</div></div>
         </div>
     </div>
 
     <div class="controles">
         <select id="filtroTempo" onchange="filtrarERenderizar()">
-            <option value="mes_atual">Mês Atual</option>
-            <option value="tudo">Histórico Total</option>
+            <option value="mes_atual">A carregar meses...</option>
         </select>
         <button onclick="carregarDados()">🔄 Sincronizar</button>
     </div>
 
-    <div id="loading">📡 Consultando Sheets...</div>
+    <div id="loading">📡 A aceder à Planilha do André...</div>
     <div class="card" id="lista-transacoes"></div>
 
     <script>
@@ -59,26 +77,20 @@
         let todosOsDados = [];
         let myChart = null;
 
-        // 1. Busca todos os dados da planilha (uma única vez por refresh)
         async function carregarDados() {
-            const loading = document.getElementById('loading');
-            loading.style.display = 'block';
+            document.getElementById('loading').style.display = 'block';
             try {
                 const res = await fetch(`${URL_API}?filtro=tudo`);
                 todosOsDados = await res.json();
-                
                 popularSeletorMeses(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { alert("Erro de conexão."); }
-            finally { loading.style.display = 'none'; }
+            } catch (e) { alert("Erro de sincronização. Verifica o GAS."); }
+            finally { document.getElementById('loading').style.display = 'none'; }
         }
 
-        // 2. Analisa os dados e cria as opções de meses automaticamente
         function popularSeletorMeses(dados) {
             const seletor = document.getElementById('filtroTempo');
             const valorAtual = seletor.value;
-            
-            // Extrai meses únicos existentes na planilha (Ex: 01/2026, 02/2026)
             const mesesMap = dados.map(item => {
                 const partes = item.Data.split(' ')[0].split('/');
                 return `${partes[1]}/${partes[2]}`;
@@ -86,11 +98,9 @@
             const mesesUnicos = [...new Set(mesesMap)].sort().reverse();
 
             let options = '<option value="mes_atual">Mês Atual</option><option value="tudo">Histórico Total</option>';
-            
             mesesUnicos.forEach(mAno => {
                 const [m, a] = mAno.split('/');
-                const dataObj = new Date(a, m - 1);
-                const nomeMes = dataObj.toLocaleString('pt-BR', { month: 'long' });
+                const nomeMes = new Date(a, m - 1).toLocaleString('pt-PT', { month: 'long' });
                 options += `<option value="${mAno}">${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)} / ${a}</option>`;
             });
 
@@ -98,51 +108,42 @@
             if (valorAtual) seletor.value = valorAtual;
         }
 
-        // 3. Filtra o cache local conforme a escolha do usuário
         function filtrarERenderizar() {
             const filtro = document.getElementById('filtroTempo').value;
             const hoje = new Date();
             const mesAtualStr = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
 
-            let filtrados = todosOsDados;
-
-            if (filtro === "mes_atual") {
-                filtrados = todosOsDados.filter(item => item.Data.includes(mesAtualStr));
-            } else if (filtro !== "tudo") {
-                filtrados = todosOsDados.filter(item => item.Data.includes(filtro));
-            }
+            let filtrados = (filtro === "mes_atual") ? todosOsDados.filter(item => item.Data.includes(mesAtualStr)) :
+                            (filtro === "tudo") ? todosOsDados : 
+                            todosOsDados.filter(item => item.Data.includes(filtro));
 
             renderizar(filtrados);
         }
 
-        // 4. Funções de Escrita (Update/Delete)
         async function excluirRegistro(id) {
-            if (!confirm(`Apagar registro de ${id}?`)) return;
-            await enviarComando(`action=delete&id=${encodeURIComponent(id)}`);
+            if (!confirm(`Apagar permanentemente o registo de ${id}?`)) return;
+            await enviarAcao(`action=delete&id=${encodeURIComponent(id)}`);
         }
 
         async function editarRegistro(id, valorAtual) {
-            const novo = prompt("Novo valor:", valorAtual);
+            const novo = prompt("Novo valor (ex: 120.50):", valorAtual);
             if (novo !== null && novo !== "" && !isNaN(novo)) {
-                await enviarComando(`action=update&id=${encodeURIComponent(id)}&novoValor=${novo}`);
+                await enviarAcao(`action=update&id=${encodeURIComponent(id)}&novoValor=${novo}`);
             }
         }
 
-        async function enviarComando(query) {
+        async function enviarAcao(query) {
             document.getElementById('loading').style.display = 'block';
             try {
                 const res = await fetch(`${URL_API}?${query}`);
                 const r = await res.json();
                 if (r.status === "sucesso") await carregarDados();
-            } catch (e) { alert("Erro na operação."); }
+            } catch (e) { alert("Falha na operação."); }
         }
 
-        // 5. Renderização da UI
         function renderizar(dados) {
             const listaDiv = document.getElementById('lista-transacoes');
             let html = "", tE = 0, tS = 0;
-
-            // Ordenar por data (mais recente primeiro)
             const ordenados = [...dados].reverse();
 
             ordenados.forEach(item => {
@@ -163,14 +164,19 @@
                             ${ehR ? '+' : '-'} R$ ${v.toFixed(2)}
                         </div>
                         <div class="acoes">
-                            <button class="btn-acao" onclick="editarRegistro('${item.Data}', '${v}')">✏️</button>
-                            <button class="btn-acao" onclick="excluirRegistro('${item.Data}')">🗑️</button>
+                            <button class="btn-acao" onclick="editarRegistro('${item.Data}', '${v}')" title="Editar">✏️</button>
+                            <button class="btn-acao" onclick="excluirRegistro('${item.Data}')" title="Excluir">🗑️</button>
                         </div>
                     </div>
                 </div>`;
             });
 
-            listaDiv.innerHTML = html || "<p style='text-align:center; opacity:0.5'>Sem registros neste período.</p>";
+            const saldo = tE - tS;
+            const sVal = document.getElementById('saldo-valor');
+            sVal.innerText = `R$ ${saldo.toFixed(0)}`;
+            sVal.style.color = saldo >= 0 ? 'var(--green)' : 'var(--red)';
+
+            listaDiv.innerHTML = html || "<p style='text-align:center; opacity:0.5'>Sem dados.</p>";
             document.getElementById('total-entradas').innerText = `R$ ${tE.toFixed(0)}`;
             document.getElementById('total-saidas').innerText = `R$ ${tS.toFixed(0)}`;
             atualizarGrafico(tE, tS);
