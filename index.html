@@ -15,7 +15,6 @@
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Gráfico e Saldo Centralizado */
         .chart-container { width: 185px; height: 185px; margin: 0 auto; position: relative; }
         #saldo-info {
             position: absolute; top: 50%; left: 50%;
@@ -64,7 +63,7 @@
 
     <div class="controles">
         <select id="filtroTempo" onchange="filtrarERenderizar()">
-            <option value="mes_atual">Carregando meses...</option>
+            <option value="mes_atual">Mês Atual</option>
         </select>
         <button onclick="carregarDados()">🔄 Sincronizar</button>
     </div>
@@ -73,6 +72,7 @@
     <div class="card" id="lista-transacoes"></div>
 
     <script>
+        // Use a URL do seu Web App do Google Apps Script
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
         let todosOsDados = [];
         let myChart = null;
@@ -84,7 +84,7 @@
                 todosOsDados = await res.json();
                 popularSeletorMeses(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { alert("Erro de sincronização!"); }
+            } catch (e) { console.error(e); alert("Erro de sincronização!"); }
             finally { document.getElementById('loading').style.display = 'none'; }
         }
 
@@ -100,7 +100,7 @@
             let options = '<option value="mes_atual">Mês Atual</option><option value="tudo">Histórico Total</option>';
             mesesUnicos.forEach(mAno => {
                 const [m, a] = mAno.split('/');
-                const nomeMes = new Date(a, m - 1).toLocaleString('pt-PT', { month: 'long' });
+                const nomeMes = new Date(a, m - 1).toLocaleString('pt-br', { month: 'long' });
                 options += `<option value="${mAno}">${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)} / ${a}</option>`;
             });
 
@@ -121,7 +121,7 @@
         }
 
         async function excluirRegistro(id) {
-            if (!confirm(`Apagar permanentemente o registo de ${id}?`)) return;
+            if (!confirm(`Apagar permanentemente o registro de ${id}?`)) return;
             await enviarAcao(`action=delete&id=${encodeURIComponent(id)}`);
         }
 
@@ -148,7 +148,12 @@
 
             ordenados.forEach(item => {
                 const v = parseFloat(item.Valor) || 0;
-                const ehR = item.Tipo === "Receita";
+                
+                // CORREÇÃO: Normaliza o tipo para minúsculo para evitar erro de comparação
+                // Verifica as chaves "Tipo" ou "tipo" (por causa da normalização do script)
+                const tipoRaw = item.Tipo || item.tipo || "";
+                const ehR = tipoRaw.toString().toLowerCase().trim() === "receita";
+
                 if (ehR) tE += v; else tS += v;
 
                 html += `
