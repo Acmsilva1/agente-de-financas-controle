@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças - Controle</title>
+    <title>Agente Finanças - BI de Bolso</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
@@ -15,34 +15,36 @@
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         
+        /* Dashboard Header */
         .chart-container { width: 185px; height: 185px; margin: 0 auto; position: relative; }
-        #saldo-info {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center; pointer-events: none;
-        }
+        #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
         #saldo-valor { font-size: 1.2rem; font-weight: bold; display: block; }
         #saldo-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 
         .card { background: var(--card-bg); padding: 15px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 15px; box-sizing: border-box; }
-        .controles { display: flex; gap: 8px; margin-bottom: 10px; width: 100%; max-width: 450px; }
-        select, button { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.9rem; }
         
+        .controles { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 450px; }
+        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.9rem; transition: 0.3s; }
+        .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
+        
+        /* Transações */
         .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
         .info { flex: 1; }
         .info strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
         .info small { color: #888; font-size: 0.75rem; }
-        
-        .valor-area { text-align: right; min-width: 100px; }
-        .valor { font-weight: bold; font-size: 1rem; margin-bottom: 5px; }
-        
         .ai-comment { font-size: 11px; color: var(--blue); margin-top: 8px; background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; border-left: 3px solid var(--blue); line-height: 1.4; }
         
-        .acoes { display: flex; gap: 12px; justify-content: flex-end; }
-        .btn-acao { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; opacity: 0.6; transition: 0.2s; }
-        .btn-acao:hover { opacity: 1; transform: scale(1.1); }
+        .valor-area { text-align: right; min-width: 100px; }
+        .valor { font-weight: bold; font-size: 1rem; }
         
+        .acoes { display: flex; gap: 12px; justify-content: flex-end; margin-top: 5px; }
+        .btn-acao { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; opacity: 0.6; }
+
         #loading { color: var(--pink); font-size: 0.8rem; font-weight: bold; display: none; margin-bottom: 8px; }
+        
+        /* KPI Styles */
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .kpi-box { padding: 10px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border); }
     </style>
 </head>
 <body>
@@ -62,20 +64,48 @@
     </div>
 
     <div class="controles">
+        <button class="btn-nav active" id="tab-feed" onclick="mudarAba('feed')">📑 Extrato</button>
+        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📊 Métricas</button>
+        <button onclick="carregarDados()" style="flex:0.3">🔄</button>
+    </div>
+
+    <div class="controles">
         <select id="filtroTempo" onchange="filtrarERenderizar()">
             <option value="mes_atual">Mês Atual</option>
         </select>
-        <button onclick="carregarDados()">🔄 Sincronizar</button>
     </div>
 
-    <div id="loading">📡 Buscando dados...</div>
-    <div class="card" id="lista-transacoes"></div>
+    <div id="loading">📡 Sincronizando dados...</div>
+
+    <div id="container-feed" class="card">
+        <div id="lista-transacoes"></div>
+    </div>
+
+    <div id="container-bi" style="display: none; width: 100%; max-width: 450px;">
+        <div class="card">
+            <h4 style="margin:0 0 10px 0">Performance Mensal</h4>
+            <div class="kpi-grid">
+                <div class="kpi-box">
+                    <small style="color:#888">Burn-rate Diário</small>
+                    <div id="kpi-burn" style="color:var(--pink); font-weight:bold; font-size:1.2rem">R$ 0</div>
+                </div>
+                <div class="kpi-box">
+                    <small style="color:#888">Projeção Gastos</small>
+                    <div id="kpi-projecao" style="font-weight:bold; font-size:1.2rem">R$ 0</div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <h4 style="margin:0 0 15px 0">Pareto de Categorias</h4>
+            <canvas id="graficoCategorias"></canvas>
+        </div>
+    </div>
 
     <script>
-        // Use a URL do seu Web App do Google Apps Script
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
         let todosOsDados = [];
         let myChart = null;
+        let chartCategorias = null;
 
         async function carregarDados() {
             document.getElementById('loading').style.display = 'block';
@@ -84,8 +114,17 @@
                 todosOsDados = await res.json();
                 popularSeletorMeses(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { console.error(e); alert("Erro de sincronização!"); }
+            } catch (e) { console.error(e); alert("Erro de rede!"); }
             finally { document.getElementById('loading').style.display = 'none'; }
+        }
+
+        function mudarAba(aba) {
+            const isFeed = aba === 'feed';
+            document.getElementById('container-feed').style.display = isFeed ? 'block' : 'none';
+            document.getElementById('container-bi').style.display = isFeed ? 'none' : 'block';
+            document.getElementById('tab-feed').classList.toggle('active', isFeed);
+            document.getElementById('tab-bi').classList.toggle('active', !isFeed);
+            if (!isFeed) processarBI();
         }
 
         function popularSeletorMeses(dados) {
@@ -96,66 +135,34 @@
                 return `${partes[1]}/${partes[2]}`;
             });
             const mesesUnicos = [...new Set(mesesMap)].sort().reverse();
-
             let options = '<option value="mes_atual">Mês Atual</option><option value="tudo">Histórico Total</option>';
             mesesUnicos.forEach(mAno => {
                 const [m, a] = mAno.split('/');
                 const nomeMes = new Date(a, m - 1).toLocaleString('pt-br', { month: 'long' });
                 options += `<option value="${mAno}">${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)} / ${a}</option>`;
             });
-
             seletor.innerHTML = options;
-            if (valorAtual) seletor.value = valorAtual;
+            seletor.value = valorAtual || "mes_atual";
         }
 
         function filtrarERenderizar() {
             const filtro = document.getElementById('filtroTempo').value;
             const hoje = new Date();
             const mesAtualStr = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
-
             let filtrados = (filtro === "mes_atual") ? todosOsDados.filter(item => item.Data.includes(mesAtualStr)) :
                             (filtro === "tudo") ? todosOsDados : 
                             todosOsDados.filter(item => item.Data.includes(filtro));
-
             renderizar(filtrados);
-        }
-
-        async function excluirRegistro(id) {
-            if (!confirm(`Apagar permanentemente o registro de ${id}?`)) return;
-            await enviarAcao(`action=delete&id=${encodeURIComponent(id)}`);
-        }
-
-        async function editarRegistro(id, valorAtual) {
-            const novo = prompt("Novo valor (ex: 120.50):", valorAtual);
-            if (novo !== null && novo !== "" && !isNaN(novo)) {
-                await enviarAcao(`action=update&id=${encodeURIComponent(id)}&novoValor=${novo}`);
-            }
-        }
-
-        async function enviarAcao(query) {
-            document.getElementById('loading').style.display = 'block';
-            try {
-                const res = await fetch(`${URL_API}?${query}`);
-                const r = await res.json();
-                if (r.status === "sucesso") await carregarDados();
-            } catch (e) { alert("Falha na operação."); }
+            if (document.getElementById('container-bi').style.display === 'block') processarBI();
         }
 
         function renderizar(dados) {
             const listaDiv = document.getElementById('lista-transacoes');
             let html = "", tE = 0, tS = 0;
-            const ordenados = [...dados].reverse();
-
-            ordenados.forEach(item => {
+            [...dados].reverse().forEach(item => {
                 const v = parseFloat(item.Valor) || 0;
-                
-                // CORREÇÃO: Normaliza o tipo para minúsculo para evitar erro de comparação
-                // Verifica as chaves "Tipo" ou "tipo" (por causa da normalização do script)
-                const tipoRaw = item.Tipo || item.tipo || "";
-                const ehR = tipoRaw.toString().toLowerCase().trim() === "receita";
-
+                const ehR = (item.Tipo || item.tipo || "").toString().toLowerCase().trim() === "receita";
                 if (ehR) tE += v; else tS += v;
-
                 html += `
                 <div class="transacao">
                     <div class="info">
@@ -168,34 +175,66 @@
                         <div class="valor" style="color: ${ehR ? 'var(--green)' : 'var(--red)'}">
                             ${ehR ? '+' : '-'} R$ ${v.toFixed(2)}
                         </div>
-                        <div class="acoes">
-                            <button class="btn-acao" onclick="editarRegistro('${item.Data}', '${v}')" title="Editar">✏️</button>
-                            <button class="btn-acao" onclick="excluirRegistro('${item.Data}')" title="Excluir">🗑️</button>
-                        </div>
                     </div>
                 </div>`;
             });
-
             const saldo = tE - tS;
-            const sVal = document.getElementById('saldo-valor');
-            sVal.innerText = `R$ ${saldo.toFixed(0)}`;
-            sVal.style.color = saldo >= 0 ? 'var(--green)' : 'var(--red)';
-
-            listaDiv.innerHTML = html || "<p style='text-align:center; opacity:0.5'>Sem dados.</p>";
+            document.getElementById('saldo-valor').innerText = `R$ ${saldo.toFixed(0)}`;
+            document.getElementById('saldo-valor').style.color = saldo >= 0 ? 'var(--green)' : 'var(--red)';
+            listaDiv.innerHTML = html || "<p style='text-align:center; opacity:0.5'>Sem registros.</p>";
             document.getElementById('total-entradas').innerText = `R$ ${tE.toFixed(0)}`;
             document.getElementById('total-saidas').innerText = `R$ ${tS.toFixed(0)}`;
-            atualizarGrafico(tE, tS);
+            atualizarGraficoDonut(tE, tS);
         }
 
-        function atualizarGrafico(e, s) {
+        function processarBI() {
+            const filtro = document.getElementById('filtroTempo').value;
+            const hoje = new Date();
+            const mesAtualStr = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+            
+            let dadosFiltrados = (filtro === "mes_atual") ? todosOsDados.filter(item => item.Data.includes(mesAtualStr)) :
+                                 (filtro === "tudo") ? todosOsDados : 
+                                 todosOsDados.filter(item => item.Data.includes(filtro));
+
+            const categorias = {};
+            let totalD = 0;
+            dadosFiltrados.forEach(item => {
+                if ((item.Tipo || item.tipo || "").toLowerCase() === 'despesa') {
+                    const v = parseFloat(item.Valor) || 0;
+                    categorias[item.Categoria] = (categorias[item.Categoria] || 0) + v;
+                    totalD += v;
+                }
+            });
+
+            // KPIs Estratégicos
+            const diaCorte = (filtro === "mes_atual") ? hoje.getDate() : 30;
+            const burn = totalD / diaCorte;
+            document.getElementById('kpi-burn').innerText = `R$ ${burn.toFixed(2)}`;
+            document.getElementById('kpi-projecao').innerText = `R$ ${(burn * 30).toFixed(2)}`;
+
+            renderizarGraficoBarras(categorias);
+        }
+
+        function atualizarGraficoDonut(e, s) {
             const ctx = document.getElementById('meuGrafico').getContext('2d');
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
-                data: {
-                    datasets: [{ data: [e, s], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }]
-                },
+                data: { datasets: [{ data: [e, s], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }] },
                 options: { cutout: '85%', plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderizarGraficoBarras(mapa) {
+            const ctx = document.getElementById('graficoCategorias').getContext('2d');
+            if (chartCategorias) chartCategorias.destroy();
+            chartCategorias = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(mapa),
+                    datasets: [{ label: 'R$', data: Object.values(mapa), backgroundColor: '#ff4081', borderRadius: 5 }]
+                },
+                options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#eee' } } } }
             });
         }
 
