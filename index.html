@@ -16,17 +16,14 @@
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         .card { background: var(--card-bg); padding: 15px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--border); margin-bottom: 15px; box-sizing: border-box; }
         
-        /* Dashboard Central */
         .chart-main { width: 180px; height: 180px; margin: 0 auto; position: relative; }
         #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
         #saldo-valor { font-weight: bold; font-size: 1.1rem; display: block; }
 
-        /* Controles */
         .controles { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 450px; }
         select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; }
         .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
 
-        /* Lista de Transações (Operacional) */
         .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
         .info { flex: 1; }
         .info strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
@@ -70,7 +67,7 @@
 
     <div id="container-bi" style="display: none; width: 100%; max-width: 450px;">
         <div class="card">
-            <h4>📊 Gastos por Macro-Categoria</h4>
+            <h4>📊 Gastos por Categoria</h4>
             <canvas id="graficoBarras"></canvas>
         </div>
         <div class="card">
@@ -83,10 +80,9 @@
         Chart.register(ChartDataLabels);
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
         
-        // Mapa de De/Para para simplificar as alucinações da IA
         const MAPA_CATEGORIAS = {
-            'Alimentação': ['Mercado', 'Hortifruti', 'Restaurante', 'Ifood', 'Comida', 'Padaria', 'Bolo'],
-            'Contas Fixas': ['Aluguel', 'Luz', 'Água', 'Internet', 'Condomínio', 'Boleto'],
+            'Alimentação': ['Mercado', 'Hortifruti', 'Restaurante', 'Ifood', 'Comida', 'Padaria', 'Bolo', 'Lanche'],
+            'Habitação': ['Aluguel', 'Luz', 'Água', 'Internet', 'Condomínio', 'Boleto'],
             'Transporte': ['Uber', 'Gasolina', 'Combustível', 'Estacionamento'],
             'Lazer': ['Cinema', 'Viagem', 'Netflix', 'Bar', 'Spotify'],
             'Saúde': ['Farmácia', 'Médico', 'Academia']
@@ -169,19 +165,23 @@
                 if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
                     const v = parseFloat(i.Valor) || 0;
                     const d = i.Data.split('/')[0];
+                    const catOriginal = i.Categoria || 'Geral';
                     
-                    let catFinal = 'Outros';
+                    let catFinal = null;
                     for (const [macro, subs] of Object.entries(MAPA_CATEGORIAS)) {
-                        if (subs.some(s => i.Categoria.toLowerCase().includes(s.toLowerCase()))) {
+                        if (subs.some(s => catOriginal.toLowerCase().includes(s.toLowerCase()))) {
                             catFinal = macro; break;
                         }
                     }
+                    
+                    // Se não estiver no mapa, usa o nome original em vez de "Outros"
+                    if(!catFinal) catFinal = catOriginal;
+
                     catAgrupada[catFinal] = (catAgrupada[catFinal] || 0) + v;
                     diaMap[d] = (diaMap[d] || 0) + v;
                 }
             });
 
-            // Gráfico de Barras (Ordenado)
             const sortedLabels = Object.keys(catAgrupada).sort((a,b) => catAgrupada[b] - catAgrupada[a]);
             updateChart('graficoBarras', 'bar', {
                 labels: sortedLabels,
@@ -195,7 +195,6 @@
                 scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } }
             });
 
-            // Gráfico de Linha (Tendência)
             const dias = Object.keys(diaMap).sort((a,b) => a-b);
             let acc = 0;
             updateChart('graficoLinha', 'line', {
