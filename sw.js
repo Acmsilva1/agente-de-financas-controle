@@ -1,4 +1,4 @@
-const cacheName = 'financas-v52'; 
+const cacheName = 'financas-v50'; // Incrementei para v50 para forçar a limpeza do cache antigo
 const assets = [
   './',
   './index.html',
@@ -10,14 +10,14 @@ const assets = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(cacheName).then(cache => {
-      console.log('SW: Cacheando assets');
+      console.log('SW: Cacheando novos assets (v50)');
       return cache.addAll(assets);
     })
   );
-  self.skipWaiting(); // Força o novo SW a assumir o controle imediatamente
+  self.skipWaiting(); 
 });
 
-// Ativação: Limpa caches antigos de versões anteriores (v15, v14, etc.)
+// Ativação: O momento da "faxina". Remove versões v44, v45, etc.
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
@@ -26,11 +26,12 @@ self.addEventListener('activate', event => {
       );
     })
   );
-  self.clients.claim(); // Garante que o SW controle a página atual imediatamente
+  self.clients.claim(); 
 });
 
-// Estratégia: Network First (Tenta rede, se falhar usa cache)
-// Ideal para o seu Dashboard que precisa de dados atualizados da planilha
+// Estratégia: Network First
+// Ele tenta buscar a planilha e o script novo na rede. 
+// Se você estiver no metrô sem sinal, ele mostra o que estiver no cache.
 self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
