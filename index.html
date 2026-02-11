@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças - BI de Bolso</title>
+    <title>Agente Finanças - BI Estratégico</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#121212">
@@ -15,36 +15,32 @@
         }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Dashboard Header */
-        .chart-container { width: 185px; height: 185px; margin: 0 auto; position: relative; }
-        #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
-        #saldo-valor { font-size: 1.2rem; font-weight: bold; display: block; }
-        #saldo-label { font-size: 0.65rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-
         .card { background: var(--card-bg); padding: 15px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 15px; box-sizing: border-box; }
         
-        .controles { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 450px; }
-        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.9rem; transition: 0.3s; }
+        /* Gráfico de Rosca Principal */
+        .chart-container { width: 180px; height: 180px; margin: 0 auto; position: relative; }
+        #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+        #saldo-valor { font-size: 1.1rem; font-weight: bold; display: block; }
+        
+        /* Navegação e Filtros */
+        .controles { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 450px; }
+        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; transition: 0.2s; }
         .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
         
-        /* Transações */
-        .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
-        .info { flex: 1; }
-        .info strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
-        .info small { color: #888; font-size: 0.75rem; }
-        .ai-comment { font-size: 11px; color: var(--blue); margin-top: 8px; background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; border-left: 3px solid var(--blue); line-height: 1.4; }
-        
-        .valor-area { text-align: right; min-width: 100px; }
-        .valor { font-weight: bold; font-size: 1rem; }
-        
-        .acoes { display: flex; gap: 12px; justify-content: flex-end; margin-top: 5px; }
-        .btn-acao { background: none; border: none; font-size: 1.1rem; cursor: pointer; padding: 4px; opacity: 0.6; }
+        /* KPIs de BI */
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+        .kpi-box { padding: 12px; background: rgba(255,255,255,0.02); border-radius: 15px; border: 1px solid var(--border); text-align: center; }
+        .kpi-box small { color: #888; font-size: 0.7rem; text-transform: uppercase; }
+        .kpi-value { font-size: 1.2rem; font-weight: bold; margin-top: 5px; display: block; }
 
-        #loading { color: var(--pink); font-size: 0.8rem; font-weight: bold; display: none; margin-bottom: 8px; }
-        
-        /* KPI Styles */
-        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .kpi-box { padding: 10px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border); }
+        /* Lista de Transações */
+        .transacao { display: flex; justify-content: space-between; align-items: center; padding: 12px 5px; border-bottom: 1px solid var(--border); }
+        .info strong { display: block; font-size: 0.9rem; }
+        .info small { color: #888; font-size: 0.75rem; }
+        .valor { font-weight: bold; font-size: 0.95rem; }
+        .ai-comment { font-size: 11px; color: var(--blue); margin-top: 5px; font-style: italic; }
+
+        #loading { color: var(--pink); font-size: 0.8rem; font-weight: bold; display: none; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -53,29 +49,27 @@
         <div class="chart-container">
             <canvas id="meuGrafico"></canvas>
             <div id="saldo-info">
-                <span id="saldo-label">Líquido</span>
+                <span style="font-size: 0.6rem; color: #888; text-transform: uppercase;">Líquido</span>
                 <span id="saldo-valor">R$ 0</span>
             </div>
         </div>
-        <div style="display: flex; justify-content: space-around; margin-top: 20px; text-align: center;">
-            <div><small style="color:#888">Receitas</small><div id="total-entradas" style="color: var(--green); font-weight: bold;">R$ 0</div></div>
-            <div><small style="color:#888">Despesas</small><div id="total-saidas" style="color: var(--red); font-weight: bold;">R$ 0</div></div>
+        <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+            <div style="text-align: center;"><small style="color:#888">Receitas</small><div id="total-entradas" style="color: var(--green); font-weight: bold;">R$ 0</div></div>
+            <div style="text-align: center;"><small style="color:#888">Despesas</small><div id="total-saidas" style="color: var(--red); font-weight: bold;">R$ 0</div></div>
         </div>
     </div>
 
     <div class="controles">
         <button class="btn-nav active" id="tab-feed" onclick="mudarAba('feed')">📑 Extrato</button>
-        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📊 Métricas</button>
-        <button onclick="carregarDados()" style="flex:0.3">🔄</button>
+        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📊 BI / Gestão</button>
+        <button onclick="carregarDados()" style="flex:0.25">🔄</button>
     </div>
 
     <div class="controles">
-        <select id="filtroTempo" onchange="filtrarERenderizar()">
-            <option value="mes_atual">Mês Atual</option>
-        </select>
+        <select id="filtroTempo" onchange="filtrarERenderizar()" style="flex:1"></select>
     </div>
 
-    <div id="loading">📡 Sincronizando dados...</div>
+    <div id="loading">📡 Sincronizando com Sheets...</div>
 
     <div id="container-feed" class="card">
         <div id="lista-transacoes"></div>
@@ -83,20 +77,20 @@
 
     <div id="container-bi" style="display: none; width: 100%; max-width: 450px;">
         <div class="card">
-            <h4 style="margin:0 0 10px 0">Performance Mensal</h4>
+            <h4 style="margin: 0 0 10px 0; font-size: 0.9rem;">Indicadores de Saúde</h4>
             <div class="kpi-grid">
-                <div class="kpi-box">
-                    <small style="color:#888">Burn-rate Diário</small>
-                    <div id="kpi-burn" style="color:var(--pink); font-weight:bold; font-size:1.2rem">R$ 0</div>
+                <div class="kpi-box" style="border-top: 3px solid var(--green)">
+                    <small>Taxa de Poupança</small>
+                    <span id="kpi-savings" class="kpi-value">0%</span>
                 </div>
-                <div class="kpi-box">
-                    <small style="color:#888">Projeção Gastos</small>
-                    <div id="kpi-projecao" style="font-weight:bold; font-size:1.2rem">R$ 0</div>
+                <div class="kpi-box" style="border-top: 3px solid var(--pink)">
+                    <small>Principal Gasto</small>
+                    <span id="kpi-ralo" class="kpi-value" style="font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">---</span>
                 </div>
             </div>
         </div>
         <div class="card">
-            <h4 style="margin:0 0 15px 0">Pareto de Categorias</h4>
+            <h4 style="margin: 0 0 15px 0; font-size: 0.9rem;">Alocação por Categoria</h4>
             <canvas id="graficoCategorias"></canvas>
         </div>
     </div>
@@ -114,7 +108,7 @@
                 todosOsDados = await res.json();
                 popularSeletorMeses(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { console.error(e); alert("Erro de rede!"); }
+            } catch (e) { alert("Erro de conexão!"); }
             finally { document.getElementById('loading').style.display = 'none'; }
         }
 
@@ -129,7 +123,6 @@
 
         function popularSeletorMeses(dados) {
             const seletor = document.getElementById('filtroTempo');
-            const valorAtual = seletor.value;
             const mesesMap = dados.map(item => {
                 const partes = item.Data.split(' ')[0].split('/');
                 return `${partes[1]}/${partes[2]}`;
@@ -142,49 +135,51 @@
                 options += `<option value="${mAno}">${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)} / ${a}</option>`;
             });
             seletor.innerHTML = options;
-            seletor.value = valorAtual || "mes_atual";
         }
 
         function filtrarERenderizar() {
             const filtro = document.getElementById('filtroTempo').value;
             const hoje = new Date();
             const mesAtualStr = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+            
             let filtrados = (filtro === "mes_atual") ? todosOsDados.filter(item => item.Data.includes(mesAtualStr)) :
                             (filtro === "tudo") ? todosOsDados : 
                             todosOsDados.filter(item => item.Data.includes(filtro));
-            renderizar(filtrados);
+            
+            renderizarLista(filtrados);
             if (document.getElementById('container-bi').style.display === 'block') processarBI();
         }
 
-        function renderizar(dados) {
+        function renderizarLista(dados) {
             const listaDiv = document.getElementById('lista-transacoes');
             let html = "", tE = 0, tS = 0;
+            
             [...dados].reverse().forEach(item => {
                 const v = parseFloat(item.Valor) || 0;
                 const ehR = (item.Tipo || item.tipo || "").toString().toLowerCase().trim() === "receita";
                 if (ehR) tE += v; else tS += v;
+                
                 html += `
                 <div class="transacao">
                     <div class="info">
-                        <small>${item.Data}</small>
+                        <small>${item.Data.split(' ')[0]}</small>
                         <strong>${item.Item}</strong>
-                        <small style="color: var(--pink)">#${item.Categoria}</small>
                         ${item.Comentario_da_IA ? `<div class="ai-comment">🤖 ${item.Comentario_da_IA}</div>` : ''}
                     </div>
-                    <div class="valor-area">
-                        <div class="valor" style="color: ${ehR ? 'var(--green)' : 'var(--red)'}">
-                            ${ehR ? '+' : '-'} R$ ${v.toFixed(2)}
-                        </div>
+                    <div class="valor" style="color: ${ehR ? 'var(--green)' : 'var(--red)'}">
+                        ${ehR ? '+' : '-'} R$ ${v.toFixed(2)}
                     </div>
                 </div>`;
             });
+
+            document.getElementById('total-entradas').innerText = `R$ ${tE.toFixed(0)}`;
+            document.getElementById('total-saidas').innerText = `R$ ${tS.toFixed(0)}`;
             const saldo = tE - tS;
             document.getElementById('saldo-valor').innerText = `R$ ${saldo.toFixed(0)}`;
             document.getElementById('saldo-valor').style.color = saldo >= 0 ? 'var(--green)' : 'var(--red)';
-            listaDiv.innerHTML = html || "<p style='text-align:center; opacity:0.5'>Sem registros.</p>";
-            document.getElementById('total-entradas').innerText = `R$ ${tE.toFixed(0)}`;
-            document.getElementById('total-saidas').innerText = `R$ ${tS.toFixed(0)}`;
-            atualizarGraficoDonut(tE, tS);
+            
+            listaDiv.innerHTML = html || "<p style='text-align:center; opacity:0.5'>Vazio.</p>";
+            atualizarGraficoGeral(tE, tS);
         }
 
         function processarBI() {
@@ -192,36 +187,44 @@
             const hoje = new Date();
             const mesAtualStr = `${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
             
-            let dadosFiltrados = (filtro === "mes_atual") ? todosOsDados.filter(item => item.Data.includes(mesAtualStr)) :
-                                 (filtro === "tudo") ? todosOsDados : 
-                                 todosOsDados.filter(item => item.Data.includes(filtro));
+            let filtrados = (filtro === "mes_atual") ? todosOsDados.filter(item => item.Data.includes(mesAtualStr)) :
+                            (filtro === "tudo") ? todosOsDados : 
+                            todosOsDados.filter(item => item.Data.includes(filtro));
 
+            let receitas = 0, despesas = 0;
             const categorias = {};
-            let totalD = 0;
-            dadosFiltrados.forEach(item => {
-                if ((item.Tipo || item.tipo || "").toLowerCase() === 'despesa') {
-                    const v = parseFloat(item.Valor) || 0;
+
+            filtrados.forEach(item => {
+                const v = parseFloat(item.Valor) || 0;
+                const tipo = (item.Tipo || item.tipo || "").toLowerCase();
+                if (tipo === 'receita') {
+                    receitas += v;
+                } else {
+                    despesas += v;
                     categorias[item.Categoria] = (categorias[item.Categoria] || 0) + v;
-                    totalD += v;
                 }
             });
 
-            // KPIs Estratégicos
-            const diaCorte = (filtro === "mes_atual") ? hoje.getDate() : 30;
-            const burn = totalD / diaCorte;
-            document.getElementById('kpi-burn').innerText = `R$ ${burn.toFixed(2)}`;
-            document.getElementById('kpi-projecao').innerText = `R$ ${(burn * 30).toFixed(2)}`;
+            // KPI: Taxa de Poupança (O que sobra da receita)
+            const taxa = receitas > 0 ? ((receitas - despesas) / receitas) * 100 : 0;
+            const kpiS = document.getElementById('kpi-savings');
+            kpiS.innerText = `${taxa.toFixed(1)}%`;
+            kpiS.style.color = taxa > 0 ? 'var(--green)' : 'var(--red)';
+
+            // KPI: Pareto (Maior ralo de dinheiro)
+            const top = Object.entries(categorias).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('kpi-ralo').innerText = top ? top[0] : "---";
 
             renderizarGraficoBarras(categorias);
         }
 
-        function atualizarGraficoDonut(e, s) {
+        function atualizarGraficoGeral(e, s) {
             const ctx = document.getElementById('meuGrafico').getContext('2d');
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { datasets: [{ data: [e, s], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }] },
-                options: { cutout: '85%', plugins: { legend: { display: false } } }
+                options: { cutout: '80%', plugins: { legend: { display: false } } }
             });
         }
 
@@ -232,9 +235,9 @@
                 type: 'bar',
                 data: {
                     labels: Object.keys(mapa),
-                    datasets: [{ label: 'R$', data: Object.values(mapa), backgroundColor: '#ff4081', borderRadius: 5 }]
+                    datasets: [{ label: 'Gasto por Categoria', data: Object.values(mapa), backgroundColor: '#3498db', borderRadius: 8 }]
                 },
-                options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#888' } }, y: { ticks: { color: '#eee' } } } }
+                options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#888' } }, y: { ticks: { color: '#e0e0e0' } } } }
             });
         }
 
