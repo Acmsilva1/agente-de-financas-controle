@@ -1,4 +1,4 @@
-const cacheName = 'financas-v52'; // Incrementei para v50 para forçar a limpeza do cache antigo
+const cacheName = 'financas-v53'; // Incrementei para v50 para forçar a limpeza do cache antigo
 const assets = [
   './',
   './index.html',
