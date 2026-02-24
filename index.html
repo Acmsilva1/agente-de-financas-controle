@@ -3,115 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças - BI Master</title>
+    <title>Agente Finanças - BI & Controle</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="manifest" href="./manifest.json">
     <style>
         :root { 
-            --green: #2ecc71; --red: #e74c3c; --blue: #3498db; --bg: #0f0f0f; 
-            --card-bg: #1a1a1a; --text: #f0f0f0; --border: #2d2d2d; --pink: #ff4081;
+            --green: #2ecc71; --red: #e74c3c; --blue: #3498db;
+            --bg: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0; 
+            --border: #333333; --pink: #ff4081;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--border); margin-bottom: 15px; box-sizing: border-box; }
         
-        .card { background: var(--card-bg); padding: 18px; border-radius: 20px; width: 100%; max-width: 500px; border: 1px solid var(--border); margin-bottom: 15px; box-sizing: border-box; }
-        
-        /* Controles */
-        .controles { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 500px; }
-        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer; flex: 1; }
+        .chart-main { width: 180px; height: 180px; margin: 0 auto; position: relative; }
+        #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+        #saldo-valor { font-weight: bold; font-size: 1.1rem; display: block; }
+
+        .controles { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 450px; }
+        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; }
         .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
-        
-        /* Área de BI e PDF */
-        #print-area { width: 100%; max-width: 500px; }
-        .report-only { display: none; } /* Esconde na tela, mostra no PDF */
 
-        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
-        .stat-box { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; border: 1px solid var(--border); text-align: center; }
-        .stat-box small { color: #888; font-size: 0.7rem; text-transform: uppercase; }
-        .stat-box div { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
+        .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
+        .info { flex: 1; }
+        .info strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
+        .info small { color: #888; font-size: 0.75rem; display: block; }
+        .cat-tag { color: var(--pink); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+        .ai-comment { font-size: 11px; color: var(--blue); margin-top: 8px; background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; border-left: 3px solid var(--blue); line-height: 1.3; }
+        .valor { font-weight: bold; font-size: 0.95rem; text-align: right; min-width: 85px; }
 
-        .chart-container { position: relative; height: 220px; margin-bottom: 10px; }
-        
-        .btn-pdf { width: 100%; background: var(--green); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
-
-        /* Ajustes específicos para o PDF não cortar */
-        @media print {
-            .no-print { display: none; }
-            .card { break-inside: avoid; border: 1px solid #ccc; color: black !important; }
-        }
+        h4 { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
-    <div class="card no-print">
-        <div style="text-align: center; margin-bottom: 15px;">
-            <small style="color:#888">SALDO LÍQUIDO</small>
-            <h2 id="saldo-valor" style="margin:5px 0; font-size: 2rem;">R$ 0</h2>
+    <div class="card">
+        <div class="chart-main">
+            <canvas id="meuGrafico"></canvas>
+            <div id="saldo-info">
+                <span style="font-size:0.6rem; color:#888">LÍQUIDO</span>
+                <span id="saldo-valor">R$ 0</span>
+            </div>
         </div>
-        <div class="grid-stats">
-            <div class="stat-box" style="border-left: 4px solid var(--green);">
-                <small>Ganhos</small><div id="t-ent" style="color: var(--green);">R$ 0</div>
-            </div>
-            <div class="stat-box" style="border-left: 4px solid var(--red);">
-                <small>Gastos</small><div id="t-sai" style="color: var(--red);">R$ 0</div>
-            </div>
+        <div style="display: flex; justify-content: space-around; margin-top: 15px; text-align: center;">
+            <div><small style="color:#888">Receitas</small><div id="t-ent" style="color: var(--green); font-weight: bold;">R$ 0</div></div>
+            <div><small style="color:#888">Despesas</small><div id="t-sai" style="color: var(--red); font-weight: bold;">R$ 0</div></div>
         </div>
     </div>
 
-    <div class="controles no-print">
+    <div class="controles">
         <button class="btn-nav active" id="tab-feed" onclick="mudarAba('feed')">📑 Extrato</button>
-        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📈 BI Master</button>
-        <button onclick="carregarDados()" style="flex:0.2; border-radius: 12px; background: var(--card-bg); color: white; border: 1px solid var(--border);">🔄</button>
+        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📈 BI / Estratégia</button>
+        <button onclick="carregarDados()" style="flex:0.25">🔄</button>
     </div>
 
-    <div class="controles no-print">
-        <select id="filtroTempo" onchange="filtrarERenderizar()"></select>
+    <div class="controles">
+        <select id="filtroTempo" onchange="filtrarERenderizar()" style="flex:1"></select>
     </div>
 
-    <div id="container-feed" class="card no-print">
+    <div id="container-feed" class="card">
         <div id="lista-transacoes"></div>
     </div>
 
-    <div id="container-bi" style="display: none; width: 100%; max-width: 500px;">
-        <button class="btn-pdf no-print" onclick="gerarPDF()">📥 Baixar Relatório Full</button>
-        
-        <div id="print-area">
-            <div class="report-only" id="pdf-header" style="margin-bottom: 20px; border-bottom: 2px solid var(--blue); padding-bottom: 10px;">
-                <h1 style="margin:0; color: var(--blue);">Relatório Financeiro</h1>
-                <p id="pdf-date" style="color: #666;"></p>
-            </div>
-
-            <div class="grid-stats">
-                <div class="stat-box"><small>Ticket Médio/Dia</small><div id="kpi-media">R$ 0</div></div>
-                <div class="stat-box"><small>Maior Compra</small><div id="kpi-max" style="color: var(--pink);">R$ 0</div></div>
-            </div>
-
-            <div class="card">
-                <h4 style="color: var(--blue); margin-top:0;">📊 Composição de Gastos</h4>
-                <div class="chart-container"><canvas id="graficoPizza"></canvas></div>
-            </div>
-
-            <div class="card">
-                <h4 style="color: var(--blue); margin-top:0;">📈 Histórico de Desembolso</h4>
-                <div class="chart-container"><canvas id="graficoLinha"></canvas></div>
-            </div>
-
-            <div class="card">
-                <h4 style="color: var(--blue); margin-top:0;">📉 Top Categorias (Volume)</h4>
-                <div class="chart-container"><canvas id="graficoBarras"></canvas></div>
-            </div>
-
-            <div class="card" id="ai-insight">
-                <h4 style="color: var(--purple); margin-top:0;">🤖 Análise do Mentor</h4>
-                <p id="insight-text" style="font-size: 0.9rem; line-height: 1.4; color: #ccc;"></p>
-            </div>
+    <div id="container-bi" style="display: none; width: 100%; max-width: 450px;">
+        <div class="card">
+            <h4>📊 Maiores Gastos</h4>
+            <canvas id="graficoBarras"></canvas>
+        </div>
+        <div class="card">
+            <h4>📈 Tendência de Gasto (Acumulado)</h4>
+            <canvas id="graficoLinha"></canvas>
         </div>
     </div>
 
     <script>
         Chart.register(ChartDataLabels);
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
-        let todosOsDados = [], charts = {};
+        
+        const MAPA_CATEGORIAS = {
+            'Alimentação': ['mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche'],
+            'Habitação': ['aluguel', 'luz', 'água', 'internet', 'condomínio', 'boleto', 'despesa', 'financiamento', 'impostos', 'reforma'],
+            'Transporte': ['uber', 'gasolina', 'combustível', 'estacionamento'],
+            'Lazer': ['cinema', 'viagem', 'netflix', 'bar', 'spotify', 'praia'],
+            'Saúde': ['farmácia', 'médico', 'academia'],
+            'Compras': ['shopee', 'amazon', 'shein', 'mercado livre', 'roupas', 'eletrônicos', 'eletrodoméstico', 'shopping', 'brinquedo'],
+            'Contas': ['faculdade', 'esporte', 'serviços bancários', 'pensão', 'celular', 'assinatura','odonto']
+        };
+
+        let todosOsDados = [];
+        let charts = {};
 
         async function carregarDados() {
             try {
@@ -119,16 +99,22 @@
                 todosOsDados = await res.json();
                 popularSeletor(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { console.error("Erro API", e); }
+            } catch (e) { console.error("Erro na API", e); }
         }
 
         function popularSeletor(dados) {
-            const s = document.getElementById('filtroTempo');
+            const seletor = document.getElementById('filtroTempo');
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            const meses = [...new Set(dados.map(i => i.Data.split(' ')[0].split('/').slice(1).join('/')))].filter(m => m !== mesAt).sort().reverse();
+            
+            // Remove o mês atual da lista histórica para evitar redundância
+            const meses = [...new Set(dados.map(i => i.Data.split(' ')[0].split('/').slice(1).join('/')))]
+                .filter(m => m !== mesAt)
+                .sort()
+                .reverse();
+
             let opt = '<option value="mes_atual">Mês Atual</option>';
             meses.forEach(m => opt += `<option value="${m}">${m}</option>`);
-            s.innerHTML = opt;
+            seletor.innerHTML = opt;
         }
 
         function mudarAba(aba) {
@@ -144,96 +130,113 @@
             const f = document.getElementById('filtroTempo').value;
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
             const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data.includes(f));
-            
+            renderizarExtrato(filtrados);
+            if (document.getElementById('container-bi').style.display === 'block') processarBI();
+        }
+
+        function renderizarExtrato(dados) {
             let tE = 0, tS = 0, html = "";
-            filtrados.forEach(i => {
+            [...dados].reverse().forEach(i => {
                 const v = parseFloat(i.Valor) || 0;
-                const ehR = (i.Tipo || "").toLowerCase() === "receita";
+                const ehR = (i.Tipo || i.tipo || "").toLowerCase().trim() === "receita";
                 ehR ? tE += v : tS += v;
-                if(document.getElementById('container-feed').style.display !== 'none') {
-                    html += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333; font-size:0.85rem;">
-                        <div><small style="color:#888">${i.Data}</small><br><b>${i.Item}</b></div>
-                        <div style="color:${ehR?'var(--green)':'var(--red)'}">R$ ${v.toFixed(2)}</div>
-                    </div>`;
-                }
+                html += `
+                <div class="transacao">
+                    <div class="info">
+                        <small>${i.Data}</small>
+                        <strong>${i.Item}</strong>
+                        <span class="cat-tag">#${i.Categoria}</span>
+                        ${i.Comentario_da_IA ? `<div class="ai-comment">🤖 ${i.Comentario_da_IA}</div>` : ''}
+                    </div>
+                    <div class="valor" style="color:${ehR?'var(--green)':'var(--red)'}">
+                        ${ehR?'+':'-'} R$ ${v.toFixed(2)}
+                    </div>
+                </div>`;
             });
             document.getElementById('saldo-valor').innerText = `R$ ${(tE-tS).toFixed(0)}`;
             document.getElementById('t-ent').innerText = `R$ ${tE.toFixed(0)}`;
             document.getElementById('t-sai').innerText = `R$ ${tS.toFixed(0)}`;
-            if(html) document.getElementById('lista-transacoes').innerHTML = html;
-            if(document.getElementById('container-bi').style.display === 'block') processarBI();
+            document.getElementById('lista-transacoes').innerHTML = html || "<p style='text-align:center'>Vazio.</p>";
+            
+            updateChart('meuGrafico', 'doughnut', {
+                labels: ['Entradas', 'Saídas'],
+                datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }]
+            }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
         }
 
         function processarBI() {
             const f = document.getElementById('filtroTempo').value;
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            const labelMes = f === "mes_atual" ? mesAt : f;
-            const filtrados = todosOsDados.filter(i => i.Data.includes(labelMes) && (i.Tipo || "").toLowerCase() === "despesa");
+            const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data.includes(f));
 
-            const catMap = {}, diaMap = {};
-            let maxV = 0, total = 0;
-
+            const catAgrupada = {}, diaMap = {};
             filtrados.forEach(i => {
-                const v = parseFloat(i.Valor) || 0;
-                const d = i.Data.split('/')[0];
-                const c = i.Categoria || "Geral";
-                catMap[c] = (catMap[c] || 0) + v;
-                diaMap[d] = (diaMap[d] || 0) + v;
-                total += v;
-                if(v > maxV) maxV = v;
+                if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
+                    const v = parseFloat(i.Valor) || 0;
+                    const d = i.Data.split('/')[0];
+                    const catOriginal = i.Categoria || 'Geral';
+                    
+                    let catFinal = null;
+                    for (const [macro, subs] of Object.entries(MAPA_CATEGORIAS)) {
+                        if (subs.some(s => catOriginal.toLowerCase().includes(s.toLowerCase()))) {
+                            catFinal = macro; break;
+                        }
+                    }
+                    if(!catFinal) catFinal = catOriginal;
+
+                    catAgrupada[catFinal] = (catAgrupada[catFinal] || 0) + v;
+                    diaMap[d] = (diaMap[d] || 0) + v;
+                }
             });
 
-            // KPIs
-            const diasNoMes = new Set(filtrados.map(i => i.Data.split('/')[0])).size || 1;
-            document.getElementById('kpi-media').innerText = `R$ ${(total/diasNoMes).toFixed(0)}`;
-            document.getElementById('kpi-max').innerText = `R$ ${maxV.toFixed(0)}`;
-            document.getElementById('insight-text').innerText = `André, seu sistema financeiro gastou R$ ${total.toFixed(0)} este mês. A categoria "${Object.keys(catMap).sort((a,b)=>catMap[b]-catMap[a])[0]}" é o seu maior gargalo de processamento. Recomendo um 'refactoring' nos gastos fixos para aumentar seu throughput de investimentos.`;
+            // Lógica de Pareto para o BI mobile ficar estratégico
+            const entradasOrdenadas = Object.entries(catAgrupada).sort((a, b) => b[1] - a[1]);
+            const TOP_N = 5;
+            const labelsFinal = [];
+            const valoresFinal = [];
+            let outrosSoma = 0;
 
-            // Gráfico Pizza (Categorias)
-            updateChart('graficoPizza', 'doughnut', {
-                labels: Object.keys(catMap),
-                datasets: [{ data: Object.values(catMap), backgroundColor: ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#ff4081'] }]
-            }, { plugins: { legend: { position: 'right', labels: { color: '#fff', font: { size: 10 } } }, datalabels: { display: false } } });
+            entradasOrdenadas.forEach(([label, valor], index) => {
+                if (index < TOP_N) {
+                    labelsFinal.push(label);
+                    valoresFinal.push(valor);
+                } else {
+                    outrosSoma += valor;
+                }
+            });
 
-            // Gráfico Barras
-            const sorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
+            if (outrosSoma > 0) labelsFinal.push("Outros (IA)");
+            if (outrosSoma > 0) valoresFinal.push(outrosSoma);
+
             updateChart('graficoBarras', 'bar', {
-                labels: sorted.map(x => x[0]),
-                datasets: [{ data: sorted.map(x => x[1]), backgroundColor: 'rgba(52, 152, 219, 0.7)' }]
-            }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff' } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' } } } });
+                labels: labelsFinal,
+                datasets: [{ data: valoresFinal, backgroundColor: '#ff4081', borderRadius: 6 }]
+            }, { 
+                indexAxis: 'y', 
+                plugins: { 
+                    legend: { display: false },
+                    datalabels: { color: '#fff', anchor: 'end', align: 'right', formatter: v => `R$ ${v.toFixed(0)}`, font: { weight: 'bold' } }
+                },
+                scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } }
+            });
 
-            // Gráfico Linha (Acumulado)
-            const dias = Object.keys(diaMap).sort((a,b)=>a-b);
+            const dias = Object.keys(diaMap).sort((a,b) => a-b);
             let acc = 0;
             updateChart('graficoLinha', 'line', {
                 labels: dias,
-                datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#2ecc71', fill: true, backgroundColor: 'rgba(46, 204, 113, 0.1)' }]
-            }, { plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { display: false }, x: { ticks: { color: '#888' } } } });
+                datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.4 }]
+            }, {
+                plugins: { 
+                    legend: { display: false },
+                    datalabels: { display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, backgroundColor: '#3498db', color: '#fff', borderRadius: 4, formatter: v => `R$ ${v.toFixed(0)}` }
+                },
+                scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#888' } } }
+            });
         }
 
         function updateChart(id, type, data, options) {
             if (charts[id]) charts[id].destroy();
             charts[id] = new Chart(document.getElementById(id), { type, data, options });
-        }
-
-        function gerarPDF() {
-            const h = document.getElementById('pdf-header');
-            const d = document.getElementById('pdf-date');
-            h.className = ""; // Mostra no PDF
-            d.innerText = `Referência: ${document.getElementById('filtroTempo').value} | Emitido em: ${new Date().toLocaleDateString()}`;
-
-            const element = document.getElementById('print-area');
-            const opt = {
-                margin: [10, 5],
-                filename: 'Relatorio_Completo.pdf',
-                image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 2, backgroundColor: '#0f0f0f' },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(element).save().then(() => {
-                h.className = "report-only"; // Esconde de volta
-            });
         }
 
         window.onload = carregarDados;
