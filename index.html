@@ -6,6 +6,7 @@
     <title>Agente Finanças - BI & Controle</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="manifest" href="./manifest.json">
     <style>
         :root { 
@@ -33,6 +34,10 @@
         .valor { font-weight: bold; font-size: 0.95rem; text-align: right; min-width: 85px; }
 
         h4 { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Estilo do botão de PDF */
+        .btn-pdf { width: 100%; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+        .btn-pdf:active { opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -66,6 +71,8 @@
     </div>
 
     <div id="container-bi" style="display: none; width: 100%; max-width: 450px;">
+        <button class="btn-pdf" onclick="gerarPDF()">📥 Baixar Relatório (PDF)</button>
+        
         <div class="card">
             <h4>📊 Maiores Gastos</h4>
             <canvas id="graficoBarras"></canvas>
@@ -106,7 +113,6 @@
             const seletor = document.getElementById('filtroTempo');
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
             
-            // Remove o mês atual da lista histórica para evitar redundância
             const meses = [...new Set(dados.map(i => i.Data.split(' ')[0].split('/').slice(1).join('/')))]
                 .filter(m => m !== mesAt)
                 .sort()
@@ -189,7 +195,6 @@
                 }
             });
 
-            // Lógica de Pareto para o BI mobile ficar estratégico
             const entradasOrdenadas = Object.entries(catAgrupada).sort((a, b) => b[1] - a[1]);
             const TOP_N = 5;
             const labelsFinal = [];
@@ -205,8 +210,10 @@
                 }
             });
 
-            if (outrosSoma > 0) labelsFinal.push("Outros (IA)");
-            if (outrosSoma > 0) valoresFinal.push(outrosSoma);
+            if (outrosSoma > 0) {
+                labelsFinal.push("Outros (IA)");
+                valoresFinal.push(outrosSoma);
+            }
 
             updateChart('graficoBarras', 'bar', {
                 labels: labelsFinal,
@@ -237,6 +244,31 @@
         function updateChart(id, type, data, options) {
             if (charts[id]) charts[id].destroy();
             charts[id] = new Chart(document.getElementById(id), { type, data, options });
+        }
+
+        // Nova função para gerar PDF com foco em UX e privacidade
+        function gerarPDF() {
+            const filtro = document.getElementById('filtroTempo').value;
+            const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
+            const labelMes = filtro === "mes_atual" ? mesAt : filtro;
+
+            const elemento = document.getElementById('container-bi');
+            
+            // Opções de exportação
+            const opt = {
+                margin: 10,
+                filename: `Relatorio_BI_${labelMes.replace('/', '-')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2, 
+                    backgroundColor: '#121212', // Mantém o tema Dark no PDF
+                    useCORS: true 
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Inicia o download
+            html2pdf().set(opt).from(elemento).save();
         }
 
         window.onload = carregarDados;
