@@ -3,83 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças - BI & Controle</title>
+    <title>Agente Finanças</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="manifest" href="./manifest.json">
     <style>
         :root { 
-            --green: #2ecc71; --red: #e74c3c; --blue: #3498db;
-            --bg: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0; 
-            --border: #333333; --pink: #ff4081;
+            --green: #2ecc71; --red: #e74c3c; --blue: #3498db; --purple: #9b59b6;
+            --bg: #0f0f0f; --card-bg: #1a1a1a; --text-main: #f0f0f0; 
+            --border: #2d2d2d; --pink: #ff4081; --gold: #f1c40f;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--border); margin-bottom: 15px; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         
-        .chart-main { width: 180px; height: 180px; margin: 0 auto; position: relative; }
-        #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
-        #saldo-valor { font-weight: bold; font-size: 1.1rem; display: block; }
+        /* Glassmorphism Effect */
+        .card { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-radius: 24px; 
+            width: 100%; 
+            max-width: 480px; 
+            border: 1px solid var(--border); 
+            margin-bottom: 20px; 
+            box-sizing: border-box;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
 
-        .controles { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 450px; }
-        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; }
-        .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
+        .chart-main { width: 200px; height: 200px; margin: 0 auto; position: relative; }
+        #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        #saldo-valor { font-weight: 800; font-size: 1.3rem; display: block; color: white; }
 
-        .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
-        .info { flex: 1; }
-        .info strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
-        .info small { color: #888; font-size: 0.75rem; display: block; }
-        .cat-tag { color: var(--pink); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
-        .ai-comment { font-size: 11px; color: var(--blue); margin-top: 8px; background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; border-left: 3px solid var(--blue); line-height: 1.3; }
-        .valor { font-weight: bold; font-size: 0.95rem; text-align: right; min-width: 85px; }
+        .controles { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; max-width: 480px; }
+        select, .btn-nav { 
+            background: var(--card-bg); color: white; border: 1px solid var(--border); 
+            padding: 12px; border-radius: 14px; cursor: pointer; flex: 1; font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+        .btn-nav.active { background: var(--blue); border-color: var(--blue); box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4); }
 
-        h4 { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; }
+        /* KPI Grid */
+        .grid-kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .kpi-box { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 15px; text-align: center; border: 1px solid var(--border); }
+        .kpi-box small { font-size: 0.7rem; color: #888; text-transform: uppercase; }
+        .kpi-box div { font-size: 1rem; font-weight: bold; margin-top: 5px; }
 
-        /* Estilo do botão de PDF */
-        .btn-pdf { width: 100%; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 12px; margin-bottom: 15px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
-        .btn-pdf:active { opacity: 0.8; }
+        /* Report Specific Styles */
+        .report-header { display: none; margin-bottom: 20px; border-bottom: 2px solid var(--blue); padding-bottom: 10px; }
+        .report-header h2 { margin: 0; color: var(--blue); }
+        
+        .btn-pdf { 
+            width: 100%; background: linear-gradient(135deg, #27ae60, #2ecc71); 
+            color: white; border: none; padding: 15px; border-radius: 15px; 
+            font-weight: bold; cursor: pointer; margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+
+        .transacao { display: flex; justify-content: space-between; padding: 15px 5px; border-bottom: 1px solid var(--border); }
+        .cat-tag { background: rgba(255, 64, 129, 0.1); color: var(--pink); padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; }
+        
+        h4 { margin: 0 0 15px 0; font-size: 0.85rem; color: var(--blue); display: flex; align-items: center; gap: 8px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <div class="card" id="main-header">
         <div class="chart-main">
             <canvas id="meuGrafico"></canvas>
             <div id="saldo-info">
-                <span style="font-size:0.6rem; color:#888">LÍQUIDO</span>
+                <span style="font-size:0.65rem; color:#888; font-weight: bold;">DISPONÍVEL</span>
                 <span id="saldo-valor">R$ 0</span>
             </div>
         </div>
-        <div style="display: flex; justify-content: space-around; margin-top: 15px; text-align: center;">
-            <div><small style="color:#888">Receitas</small><div id="t-ent" style="color: var(--green); font-weight: bold;">R$ 0</div></div>
-            <div><small style="color:#888">Despesas</small><div id="t-sai" style="color: var(--red); font-weight: bold;">R$ 0</div></div>
+        <div class="grid-kpi">
+            <div class="kpi-box">
+                <small>Receitas</small>
+                <div id="t-ent" style="color: var(--green);">R$ 0</div>
+            </div>
+            <div class="kpi-box">
+                <small>Despesas</small>
+                <div id="t-sai" style="color: var(--red);">R$ 0</div>
+            </div>
         </div>
     </div>
 
     <div class="controles">
         <button class="btn-nav active" id="tab-feed" onclick="mudarAba('feed')">📑 Extrato</button>
-        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📈 BI / Estratégia</button>
-        <button onclick="carregarDados()" style="flex:0.25">🔄</button>
+        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">Finanças</button>
+        <button onclick="carregarDados()" style="flex:0.2; border-radius: 14px; background: var(--card-bg); border: 1px solid var(--border); color: white;">🔄</button>
     </div>
 
     <div class="controles">
-        <select id="filtroTempo" onchange="filtrarERenderizar()" style="flex:1"></select>
+        <select id="filtroTempo" onchange="filtrarERenderizar()"></select>
     </div>
 
     <div id="container-feed" class="card">
         <div id="lista-transacoes"></div>
     </div>
 
-    <div id="container-bi" style="display: none; width: 100%; max-width: 450px;">
-        <button class="btn-pdf" onclick="gerarPDF()">📥 Baixar Relatório (PDF)</button>
+    <div id="container-bi" style="display: none; width: 100%; max-width: 480px;">
+        <button class="btn-pdf" onclick="gerarPDF()">📥 Exportar Relatório Executivo</button>
         
-        <div class="card">
-            <h4>📊 Maiores Gastos</h4>
-            <canvas id="graficoBarras"></canvas>
-        </div>
-        <div class="card">
-            <h4>📈 Tendência de Gasto (Acumulado)</h4>
-            <canvas id="graficoLinha"></canvas>
+        <div id="print-area">
+            <div class="report-header" id="header-pdf">
+                <h2>Relatório de Performance Financeira</h2>
+                <p id="sub-pdf" style="color: #888; font-size: 0.8rem;"></p>
+            </div>
+
+            <div class="card">
+                <h4>📊 Mix de Gastos (Pareto)</h4>
+                <canvas id="graficoBarras"></canvas>
+            </div>
+
+            <div class="card">
+                <h4>📈 Fluxo de Caixa Acumulado</h4>
+                <canvas id="graficoLinha"></canvas>
+            </div>
+
+            <div class="card" id="insight-card">
+                <h4>💡 Insight do Mentor (TI & Finanças)</h4>
+                <div id="ai-insight-text" style="font-size: 0.9rem; line-height: 1.5; color: #bbb;">
+                    Analise seus gastos fixos. A arquitetura das suas finanças deve priorizar escalabilidade do aporte.
+                </div>
+            </div>
         </div>
     </div>
 
@@ -112,12 +157,8 @@
         function popularSeletor(dados) {
             const seletor = document.getElementById('filtroTempo');
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            
             const meses = [...new Set(dados.map(i => i.Data.split(' ')[0].split('/').slice(1).join('/')))]
-                .filter(m => m !== mesAt)
-                .sort()
-                .reverse();
-
+                .filter(m => m !== mesAt).sort().reverse();
             let opt = '<option value="mes_atual">Mês Atual</option>';
             meses.forEach(m => opt += `<option value="${m}">${m}</option>`);
             seletor.innerHTML = opt;
@@ -149,95 +190,78 @@
                 html += `
                 <div class="transacao">
                     <div class="info">
-                        <small>${i.Data}</small>
-                        <strong>${i.Item}</strong>
+                        <small style="color:#666">${i.Data}</small>
+                        <strong style="display:block; margin: 3px 0;">${i.Item}</strong>
                         <span class="cat-tag">#${i.Categoria}</span>
-                        ${i.Comentario_da_IA ? `<div class="ai-comment">🤖 ${i.Comentario_da_IA}</div>` : ''}
                     </div>
-                    <div class="valor" style="color:${ehR?'var(--green)':'var(--red)'}">
-                        ${ehR?'+':'-'} R$ ${v.toFixed(2)}
+                    <div class="valor" style="color:${ehR?'var(--green)':'var(--red)'}; font-weight:bold;">
+                        ${ehR?'+':'-'} R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
                     </div>
                 </div>`;
             });
             document.getElementById('saldo-valor').innerText = `R$ ${(tE-tS).toFixed(0)}`;
             document.getElementById('t-ent').innerText = `R$ ${tE.toFixed(0)}`;
             document.getElementById('t-sai').innerText = `R$ ${tS.toFixed(0)}`;
-            document.getElementById('lista-transacoes').innerHTML = html || "<p style='text-align:center'>Vazio.</p>";
+            document.getElementById('lista-transacoes').innerHTML = html || "<p style='text-align:center'>Sem dados.</p>";
             
             updateChart('meuGrafico', 'doughnut', {
-                labels: ['Entradas', 'Saídas'],
-                datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }]
-            }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
+                labels: ['Receitas', 'Despesas'],
+                datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0, hoverOffset: 4 }]
+            }, { cutout: '85%', plugins: { datalabels: { display: false }, legend: { display: false } } });
         }
 
         function processarBI() {
             const f = document.getElementById('filtroTempo').value;
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data.includes(f));
+            const labelMes = f === "mes_atual" ? mesAt : f;
+            const filtrados = todosOsDados.filter(i => i.Data.includes(labelMes));
 
             const catAgrupada = {}, diaMap = {};
+            let maxGasto = 0, catDominante = "";
+
             filtrados.forEach(i => {
                 if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
                     const v = parseFloat(i.Valor) || 0;
                     const d = i.Data.split('/')[0];
-                    const catOriginal = i.Categoria || 'Geral';
-                    
-                    let catFinal = null;
+                    let catFinal = i.Categoria || 'Geral';
                     for (const [macro, subs] of Object.entries(MAPA_CATEGORIAS)) {
-                        if (subs.some(s => catOriginal.toLowerCase().includes(s.toLowerCase()))) {
+                        if (subs.some(s => catFinal.toLowerCase().includes(s.toLowerCase()))) {
                             catFinal = macro; break;
                         }
                     }
-                    if(!catFinal) catFinal = catOriginal;
-
                     catAgrupada[catFinal] = (catAgrupada[catFinal] || 0) + v;
                     diaMap[d] = (diaMap[d] || 0) + v;
+                    if(catAgrupada[catFinal] > maxGasto) { maxGasto = catAgrupada[catFinal]; catDominante = catFinal; }
                 }
             });
 
-            const entradasOrdenadas = Object.entries(catAgrupada).sort((a, b) => b[1] - a[1]);
-            const TOP_N = 5;
-            const labelsFinal = [];
-            const valoresFinal = [];
-            let outrosSoma = 0;
+            // Insight Automático
+            document.getElementById('ai-insight-text').innerHTML = `No período de <b>${labelMes}</b>, sua maior carga de "processamento" financeiro foi em <b>${catDominante}</b>. 
+            Considere isso como um vazamento de memória no seu sistema; otimize essa categoria para liberar cache para seus investimentos.`;
 
-            entradasOrdenadas.forEach(([label, valor], index) => {
-                if (index < TOP_N) {
-                    labelsFinal.push(label);
-                    valoresFinal.push(valor);
-                } else {
-                    outrosSoma += valor;
-                }
-            });
-
-            if (outrosSoma > 0) {
-                labelsFinal.push("Outros (IA)");
-                valoresFinal.push(outrosSoma);
-            }
-
+            // Gráfico Barras (Pareto)
+            const sorted = Object.entries(catAgrupada).sort((a,b) => b[1]-a[1]).slice(0,5);
             updateChart('graficoBarras', 'bar', {
-                labels: labelsFinal,
-                datasets: [{ data: valoresFinal, backgroundColor: '#ff4081', borderRadius: 6 }]
+                labels: sorted.map(x => x[0]),
+                datasets: [{ data: sorted.map(x => x[1]), backgroundColor: '#ff4081', borderRadius: 8 }]
             }, { 
                 indexAxis: 'y', 
-                plugins: { 
-                    legend: { display: false },
-                    datalabels: { color: '#fff', anchor: 'end', align: 'right', formatter: v => `R$ ${v.toFixed(0)}`, font: { weight: 'bold' } }
-                },
-                scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } }
+                plugins: { legend: {display:false}, datalabels: { color: '#fff', formatter: v => `R$${v.toFixed(0)}` } },
+                scales: { x: { display: false }, y: { ticks: { color: '#fff' } } }
             });
 
+            // Gráfico Linha
             const dias = Object.keys(diaMap).sort((a,b) => a-b);
             let acc = 0;
             updateChart('graficoLinha', 'line', {
                 labels: dias,
-                datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.4 }]
+                datasets: [{ 
+                    data: dias.map(d => { acc += diaMap[d]; return acc; }), 
+                    borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.3 
+                }]
             }, {
-                plugins: { 
-                    legend: { display: false },
-                    datalabels: { display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, backgroundColor: '#3498db', color: '#fff', borderRadius: 4, formatter: v => `R$ ${v.toFixed(0)}` }
-                },
-                scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#888' } } }
+                plugins: { legend: {display:false}, datalabels: { display: false } },
+                scales: { y: { display: false }, x: { ticks: { color: '#888' } } }
             });
         }
 
@@ -246,29 +270,28 @@
             charts[id] = new Chart(document.getElementById(id), { type, data, options });
         }
 
-        // Nova função para gerar PDF com foco em UX e privacidade
         function gerarPDF() {
-            const filtro = document.getElementById('filtroTempo').value;
-            const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            const labelMes = filtro === "mes_atual" ? mesAt : filtro;
-
-            const elemento = document.getElementById('container-bi');
+            const f = document.getElementById('filtroTempo').value;
+            const labelMes = f === "mes_atual" ? "Mês Atual" : f;
             
-            // Opções de exportação
+            // Prepara o cabeçalho do PDF antes de "fotografar"
+            const header = document.getElementById('header-pdf');
+            const sub = document.getElementById('sub-pdf');
+            header.style.display = 'block';
+            sub.innerText = `Análise referente a: ${labelMes} | Gerado em: ${new Date().toLocaleDateString()}`;
+
+            const element = document.getElementById('print-area');
             const opt = {
                 margin: 10,
-                filename: `Relatorio_BI_${labelMes.replace('/', '-')}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2, 
-                    backgroundColor: '#121212', // Mantém o tema Dark no PDF
-                    useCORS: true 
-                },
+                filename: `Relatorio_Financeiro_Andre_${labelMes}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 3, backgroundColor: '#0f0f0f', useCORS: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Inicia o download
-            html2pdf().set(opt).from(elemento).save();
+            html2pdf().set(opt).from(element).save().then(() => {
+                header.style.display = 'none'; // Esconde de volta na tela
+            });
         }
 
         window.onload = carregarDados;
