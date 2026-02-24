@@ -3,127 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças</title>
+    <title>Agente Finanças - BI Master</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <link rel="manifest" href="./manifest.json">
     <style>
         :root { 
-            --green: #2ecc71; --red: #e74c3c; --blue: #3498db; --purple: #9b59b6;
-            --bg: #0f0f0f; --card-bg: #1a1a1a; --text-main: #f0f0f0; 
-            --border: #2d2d2d; --pink: #ff4081; --gold: #f1c40f;
+            --green: #2ecc71; --red: #e74c3c; --blue: #3498db; --bg: #0f0f0f; 
+            --card-bg: #1a1a1a; --text: #f0f0f0; --border: #2d2d2d; --pink: #ff4081;
         }
-        body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
         
-        /* Glassmorphism Effect */
-        .card { 
-            background: var(--card-bg); 
-            padding: 20px; 
-            border-radius: 24px; 
-            width: 100%; 
-            max-width: 480px; 
-            border: 1px solid var(--border); 
-            margin-bottom: 20px; 
-            box-sizing: border-box;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .chart-main { width: 200px; height: 200px; margin: 0 auto; position: relative; }
-        #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-        #saldo-valor { font-weight: 800; font-size: 1.3rem; display: block; color: white; }
-
-        .controles { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; max-width: 480px; }
-        select, .btn-nav { 
-            background: var(--card-bg); color: white; border: 1px solid var(--border); 
-            padding: 12px; border-radius: 14px; cursor: pointer; flex: 1; font-size: 0.9rem;
-            transition: all 0.3s;
-        }
-        .btn-nav.active { background: var(--blue); border-color: var(--blue); box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4); }
-
-        /* KPI Grid */
-        .grid-kpi { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .kpi-box { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 15px; text-align: center; border: 1px solid var(--border); }
-        .kpi-box small { font-size: 0.7rem; color: #888; text-transform: uppercase; }
-        .kpi-box div { font-size: 1rem; font-weight: bold; margin-top: 5px; }
-
-        /* Report Specific Styles */
-        .report-header { display: none; margin-bottom: 20px; border-bottom: 2px solid var(--blue); padding-bottom: 10px; }
-        .report-header h2 { margin: 0; color: var(--blue); }
+        .card { background: var(--card-bg); padding: 18px; border-radius: 20px; width: 100%; max-width: 500px; border: 1px solid var(--border); margin-bottom: 15px; box-sizing: border-box; }
         
-        .btn-pdf { 
-            width: 100%; background: linear-gradient(135deg, #27ae60, #2ecc71); 
-            color: white; border: none; padding: 15px; border-radius: 15px; 
-            font-weight: bold; cursor: pointer; margin-bottom: 20px;
-            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
-        }
-
-        .transacao { display: flex; justify-content: space-between; padding: 15px 5px; border-bottom: 1px solid var(--border); }
-        .cat-tag { background: rgba(255, 64, 129, 0.1); color: var(--pink); padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; }
+        /* Controles */
+        .controles { display: flex; gap: 8px; margin-bottom: 15px; width: 100%; max-width: 500px; }
+        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 12px; border-radius: 12px; cursor: pointer; flex: 1; }
+        .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
         
-        h4 { margin: 0 0 15px 0; font-size: 0.85rem; color: var(--blue); display: flex; align-items: center; gap: 8px; }
+        /* Área de BI e PDF */
+        #print-area { width: 100%; max-width: 500px; }
+        .report-only { display: none; } /* Esconde na tela, mostra no PDF */
+
+        .grid-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-box { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; border: 1px solid var(--border); text-align: center; }
+        .stat-box small { color: #888; font-size: 0.7rem; text-transform: uppercase; }
+        .stat-box div { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
+
+        .chart-container { position: relative; height: 220px; margin-bottom: 10px; }
+        
+        .btn-pdf { width: 100%; background: var(--green); color: white; border: none; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+
+        /* Ajustes específicos para o PDF não cortar */
+        @media print {
+            .no-print { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ccc; color: black !important; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="card" id="main-header">
-        <div class="chart-main">
-            <canvas id="meuGrafico"></canvas>
-            <div id="saldo-info">
-                <span style="font-size:0.65rem; color:#888; font-weight: bold;">DISPONÍVEL</span>
-                <span id="saldo-valor">R$ 0</span>
-            </div>
+    <div class="card no-print">
+        <div style="text-align: center; margin-bottom: 15px;">
+            <small style="color:#888">SALDO LÍQUIDO</small>
+            <h2 id="saldo-valor" style="margin:5px 0; font-size: 2rem;">R$ 0</h2>
         </div>
-        <div class="grid-kpi">
-            <div class="kpi-box">
-                <small>Receitas</small>
-                <div id="t-ent" style="color: var(--green);">R$ 0</div>
+        <div class="grid-stats">
+            <div class="stat-box" style="border-left: 4px solid var(--green);">
+                <small>Ganhos</small><div id="t-ent" style="color: var(--green);">R$ 0</div>
             </div>
-            <div class="kpi-box">
-                <small>Despesas</small>
-                <div id="t-sai" style="color: var(--red);">R$ 0</div>
+            <div class="stat-box" style="border-left: 4px solid var(--red);">
+                <small>Gastos</small><div id="t-sai" style="color: var(--red);">R$ 0</div>
             </div>
         </div>
     </div>
 
-    <div class="controles">
+    <div class="controles no-print">
         <button class="btn-nav active" id="tab-feed" onclick="mudarAba('feed')">📑 Extrato</button>
-        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">Finanças</button>
-        <button onclick="carregarDados()" style="flex:0.2; border-radius: 14px; background: var(--card-bg); border: 1px solid var(--border); color: white;">🔄</button>
+        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📈 BI Master</button>
+        <button onclick="carregarDados()" style="flex:0.2; border-radius: 12px; background: var(--card-bg); color: white; border: 1px solid var(--border);">🔄</button>
     </div>
 
-    <div class="controles">
+    <div class="controles no-print">
         <select id="filtroTempo" onchange="filtrarERenderizar()"></select>
     </div>
 
-    <div id="container-feed" class="card">
+    <div id="container-feed" class="card no-print">
         <div id="lista-transacoes"></div>
     </div>
 
-    <div id="container-bi" style="display: none; width: 100%; max-width: 480px;">
-        <button class="btn-pdf" onclick="gerarPDF()">📥 Exportar Relatório Executivo</button>
+    <div id="container-bi" style="display: none; width: 100%; max-width: 500px;">
+        <button class="btn-pdf no-print" onclick="gerarPDF()">📥 Baixar Relatório Full</button>
         
         <div id="print-area">
-            <div class="report-header" id="header-pdf">
-                <h2>Relatório de Performance Financeira</h2>
-                <p id="sub-pdf" style="color: #888; font-size: 0.8rem;"></p>
+            <div class="report-only" id="pdf-header" style="margin-bottom: 20px; border-bottom: 2px solid var(--blue); padding-bottom: 10px;">
+                <h1 style="margin:0; color: var(--blue);">Relatório Financeiro</h1>
+                <p id="pdf-date" style="color: #666;"></p>
+            </div>
+
+            <div class="grid-stats">
+                <div class="stat-box"><small>Ticket Médio/Dia</small><div id="kpi-media">R$ 0</div></div>
+                <div class="stat-box"><small>Maior Compra</small><div id="kpi-max" style="color: var(--pink);">R$ 0</div></div>
             </div>
 
             <div class="card">
-                <h4>📊 Mix de Gastos (Pareto)</h4>
-                <canvas id="graficoBarras"></canvas>
+                <h4 style="color: var(--blue); margin-top:0;">📊 Composição de Gastos</h4>
+                <div class="chart-container"><canvas id="graficoPizza"></canvas></div>
             </div>
 
             <div class="card">
-                <h4>📈 Fluxo de Caixa Acumulado</h4>
-                <canvas id="graficoLinha"></canvas>
+                <h4 style="color: var(--blue); margin-top:0;">📈 Histórico de Desembolso</h4>
+                <div class="chart-container"><canvas id="graficoLinha"></canvas></div>
             </div>
 
-            <div class="card" id="insight-card">
-                <h4>💡 Insight do Mentor (TI & Finanças)</h4>
-                <div id="ai-insight-text" style="font-size: 0.9rem; line-height: 1.5; color: #bbb;">
-                    Analise seus gastos fixos. A arquitetura das suas finanças deve priorizar escalabilidade do aporte.
-                </div>
+            <div class="card">
+                <h4 style="color: var(--blue); margin-top:0;">📉 Top Categorias (Volume)</h4>
+                <div class="chart-container"><canvas id="graficoBarras"></canvas></div>
+            </div>
+
+            <div class="card" id="ai-insight">
+                <h4 style="color: var(--purple); margin-top:0;">🤖 Análise do Mentor</h4>
+                <p id="insight-text" style="font-size: 0.9rem; line-height: 1.4; color: #ccc;"></p>
             </div>
         </div>
     </div>
@@ -131,19 +111,7 @@
     <script>
         Chart.register(ChartDataLabels);
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
-        
-        const MAPA_CATEGORIAS = {
-            'Alimentação': ['mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche'],
-            'Habitação': ['aluguel', 'luz', 'água', 'internet', 'condomínio', 'boleto', 'despesa', 'financiamento', 'impostos', 'reforma'],
-            'Transporte': ['uber', 'gasolina', 'combustível', 'estacionamento'],
-            'Lazer': ['cinema', 'viagem', 'netflix', 'bar', 'spotify', 'praia'],
-            'Saúde': ['farmácia', 'médico', 'academia'],
-            'Compras': ['shopee', 'amazon', 'shein', 'mercado livre', 'roupas', 'eletrônicos', 'eletrodoméstico', 'shopping', 'brinquedo'],
-            'Contas': ['faculdade', 'esporte', 'serviços bancários', 'pensão', 'celular', 'assinatura','odonto']
-        };
-
-        let todosOsDados = [];
-        let charts = {};
+        let todosOsDados = [], charts = {};
 
         async function carregarDados() {
             try {
@@ -151,17 +119,16 @@
                 todosOsDados = await res.json();
                 popularSeletor(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { console.error("Erro na API", e); }
+            } catch (e) { console.error("Erro API", e); }
         }
 
         function popularSeletor(dados) {
-            const seletor = document.getElementById('filtroTempo');
+            const s = document.getElementById('filtroTempo');
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            const meses = [...new Set(dados.map(i => i.Data.split(' ')[0].split('/').slice(1).join('/')))]
-                .filter(m => m !== mesAt).sort().reverse();
+            const meses = [...new Set(dados.map(i => i.Data.split(' ')[0].split('/').slice(1).join('/')))].filter(m => m !== mesAt).sort().reverse();
             let opt = '<option value="mes_atual">Mês Atual</option>';
             meses.forEach(m => opt += `<option value="${m}">${m}</option>`);
-            seletor.innerHTML = opt;
+            s.innerHTML = opt;
         }
 
         function mudarAba(aba) {
@@ -177,92 +144,71 @@
             const f = document.getElementById('filtroTempo').value;
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
             const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data.includes(f));
-            renderizarExtrato(filtrados);
-            if (document.getElementById('container-bi').style.display === 'block') processarBI();
-        }
-
-        function renderizarExtrato(dados) {
+            
             let tE = 0, tS = 0, html = "";
-            [...dados].reverse().forEach(i => {
+            filtrados.forEach(i => {
                 const v = parseFloat(i.Valor) || 0;
-                const ehR = (i.Tipo || i.tipo || "").toLowerCase().trim() === "receita";
+                const ehR = (i.Tipo || "").toLowerCase() === "receita";
                 ehR ? tE += v : tS += v;
-                html += `
-                <div class="transacao">
-                    <div class="info">
-                        <small style="color:#666">${i.Data}</small>
-                        <strong style="display:block; margin: 3px 0;">${i.Item}</strong>
-                        <span class="cat-tag">#${i.Categoria}</span>
-                    </div>
-                    <div class="valor" style="color:${ehR?'var(--green)':'var(--red)'}; font-weight:bold;">
-                        ${ehR?'+':'-'} R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </div>
-                </div>`;
+                if(document.getElementById('container-feed').style.display !== 'none') {
+                    html += `<div style="display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #333; font-size:0.85rem;">
+                        <div><small style="color:#888">${i.Data}</small><br><b>${i.Item}</b></div>
+                        <div style="color:${ehR?'var(--green)':'var(--red)'}">R$ ${v.toFixed(2)}</div>
+                    </div>`;
+                }
             });
             document.getElementById('saldo-valor').innerText = `R$ ${(tE-tS).toFixed(0)}`;
             document.getElementById('t-ent').innerText = `R$ ${tE.toFixed(0)}`;
             document.getElementById('t-sai').innerText = `R$ ${tS.toFixed(0)}`;
-            document.getElementById('lista-transacoes').innerHTML = html || "<p style='text-align:center'>Sem dados.</p>";
-            
-            updateChart('meuGrafico', 'doughnut', {
-                labels: ['Receitas', 'Despesas'],
-                datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0, hoverOffset: 4 }]
-            }, { cutout: '85%', plugins: { datalabels: { display: false }, legend: { display: false } } });
+            if(html) document.getElementById('lista-transacoes').innerHTML = html;
+            if(document.getElementById('container-bi').style.display === 'block') processarBI();
         }
 
         function processarBI() {
             const f = document.getElementById('filtroTempo').value;
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
             const labelMes = f === "mes_atual" ? mesAt : f;
-            const filtrados = todosOsDados.filter(i => i.Data.includes(labelMes));
+            const filtrados = todosOsDados.filter(i => i.Data.includes(labelMes) && (i.Tipo || "").toLowerCase() === "despesa");
 
-            const catAgrupada = {}, diaMap = {};
-            let maxGasto = 0, catDominante = "";
+            const catMap = {}, diaMap = {};
+            let maxV = 0, total = 0;
 
             filtrados.forEach(i => {
-                if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
-                    const v = parseFloat(i.Valor) || 0;
-                    const d = i.Data.split('/')[0];
-                    let catFinal = i.Categoria || 'Geral';
-                    for (const [macro, subs] of Object.entries(MAPA_CATEGORIAS)) {
-                        if (subs.some(s => catFinal.toLowerCase().includes(s.toLowerCase()))) {
-                            catFinal = macro; break;
-                        }
-                    }
-                    catAgrupada[catFinal] = (catAgrupada[catFinal] || 0) + v;
-                    diaMap[d] = (diaMap[d] || 0) + v;
-                    if(catAgrupada[catFinal] > maxGasto) { maxGasto = catAgrupada[catFinal]; catDominante = catFinal; }
-                }
+                const v = parseFloat(i.Valor) || 0;
+                const d = i.Data.split('/')[0];
+                const c = i.Categoria || "Geral";
+                catMap[c] = (catMap[c] || 0) + v;
+                diaMap[d] = (diaMap[d] || 0) + v;
+                total += v;
+                if(v > maxV) maxV = v;
             });
 
-            // Insight Automático
-            document.getElementById('ai-insight-text').innerHTML = `No período de <b>${labelMes}</b>, sua maior carga de "processamento" financeiro foi em <b>${catDominante}</b>. 
-            Considere isso como um vazamento de memória no seu sistema; otimize essa categoria para liberar cache para seus investimentos.`;
+            // KPIs
+            const diasNoMes = new Set(filtrados.map(i => i.Data.split('/')[0])).size || 1;
+            document.getElementById('kpi-media').innerText = `R$ ${(total/diasNoMes).toFixed(0)}`;
+            document.getElementById('kpi-max').innerText = `R$ ${maxV.toFixed(0)}`;
+            document.getElementById('insight-text').innerText = `André, seu sistema financeiro gastou R$ ${total.toFixed(0)} este mês. A categoria "${Object.keys(catMap).sort((a,b)=>catMap[b]-catMap[a])[0]}" é o seu maior gargalo de processamento. Recomendo um 'refactoring' nos gastos fixos para aumentar seu throughput de investimentos.`;
 
-            // Gráfico Barras (Pareto)
-            const sorted = Object.entries(catAgrupada).sort((a,b) => b[1]-a[1]).slice(0,5);
+            // Gráfico Pizza (Categorias)
+            updateChart('graficoPizza', 'doughnut', {
+                labels: Object.keys(catMap),
+                datasets: [{ data: Object.values(catMap), backgroundColor: ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6', '#ff4081'] }]
+            }, { plugins: { legend: { position: 'right', labels: { color: '#fff', font: { size: 10 } } }, datalabels: { display: false } } });
+
+            // Gráfico Barras
+            const sorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,5);
             updateChart('graficoBarras', 'bar', {
                 labels: sorted.map(x => x[0]),
-                datasets: [{ data: sorted.map(x => x[1]), backgroundColor: '#ff4081', borderRadius: 8 }]
-            }, { 
-                indexAxis: 'y', 
-                plugins: { legend: {display:false}, datalabels: { color: '#fff', formatter: v => `R$${v.toFixed(0)}` } },
-                scales: { x: { display: false }, y: { ticks: { color: '#fff' } } }
-            });
+                datasets: [{ data: sorted.map(x => x[1]), backgroundColor: 'rgba(52, 152, 219, 0.7)' }]
+            }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff' } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' } } } });
 
-            // Gráfico Linha
-            const dias = Object.keys(diaMap).sort((a,b) => a-b);
+            // Gráfico Linha (Acumulado)
+            const dias = Object.keys(diaMap).sort((a,b)=>a-b);
             let acc = 0;
             updateChart('graficoLinha', 'line', {
                 labels: dias,
-                datasets: [{ 
-                    data: dias.map(d => { acc += diaMap[d]; return acc; }), 
-                    borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.3 
-                }]
-            }, {
-                plugins: { legend: {display:false}, datalabels: { display: false } },
-                scales: { y: { display: false }, x: { ticks: { color: '#888' } } }
-            });
+                datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#2ecc71', fill: true, backgroundColor: 'rgba(46, 204, 113, 0.1)' }]
+            }, { plugins: { legend: { display: false }, datalabels: { display: false } }, scales: { y: { display: false }, x: { ticks: { color: '#888' } } } });
         }
 
         function updateChart(id, type, data, options) {
@@ -271,26 +217,22 @@
         }
 
         function gerarPDF() {
-            const f = document.getElementById('filtroTempo').value;
-            const labelMes = f === "mes_atual" ? "Mês Atual" : f;
-            
-            // Prepara o cabeçalho do PDF antes de "fotografar"
-            const header = document.getElementById('header-pdf');
-            const sub = document.getElementById('sub-pdf');
-            header.style.display = 'block';
-            sub.innerText = `Análise referente a: ${labelMes} | Gerado em: ${new Date().toLocaleDateString()}`;
+            const h = document.getElementById('pdf-header');
+            const d = document.getElementById('pdf-date');
+            h.className = ""; // Mostra no PDF
+            d.innerText = `Referência: ${document.getElementById('filtroTempo').value} | Emitido em: ${new Date().toLocaleDateString()}`;
 
             const element = document.getElementById('print-area');
             const opt = {
-                margin: 10,
-                filename: `Relatorio_Financeiro_Andre_${labelMes}.pdf`,
+                margin: [10, 5],
+                filename: 'Relatorio_Completo.pdf',
                 image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 3, backgroundColor: '#0f0f0f', useCORS: true },
+                html2canvas: { scale: 2, backgroundColor: '#0f0f0f' },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
             html2pdf().set(opt).from(element).save().then(() => {
-                header.style.display = 'none'; // Esconde de volta na tela
+                h.className = "report-only"; // Esconde de volta
             });
         }
 
