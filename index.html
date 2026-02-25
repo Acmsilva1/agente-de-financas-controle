@@ -21,7 +21,7 @@
         #saldo-valor { font-weight: bold; font-size: 1.1rem; display: block; }
 
         .controles { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 450px; }
-        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; }
+        select, .btn-nav, .btn-action { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; }
         .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
 
         .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
@@ -54,7 +54,8 @@
     <div class="controles">
         <button class="btn-nav active" id="tab-feed" onclick="mudarAba('feed')">📑 Extrato</button>
         <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📈 BI / Estratégia</button>
-        <button onclick="carregarDados()" style="flex:0.25">🔄</button>
+        <button onclick="carregarDados()" class="btn-action" style="flex:0.25">🔄</button>
+        <button onclick="gerarRelatorioHTML()" class="btn-action" style="flex:0.25" title="Baixar Relatório">📄</button>
     </div>
 
     <div class="controles">
@@ -105,8 +106,6 @@
         function popularSeletor(dados) {
             const seletor = document.getElementById('filtroTempo');
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            
-            // Remove o mês atual da lista histórica para evitar redundância
             const meses = [...new Set(dados.map(i => i.Data.split(' ')[0].split('/').slice(1).join('/')))]
                 .filter(m => m !== mesAt)
                 .sort()
@@ -126,10 +125,14 @@
             if (!isFeed) processarBI();
         }
 
-        function filtrarERenderizar() {
+        function getDadosFiltrados() {
             const f = document.getElementById('filtroTempo').value;
             const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data.includes(f));
+            return (f === "mes_atual") ? todosOsDados.filter(i => i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data.includes(f));
+        }
+
+        function filtrarERenderizar() {
+            const filtrados = getDadosFiltrados();
             renderizarExtrato(filtrados);
             if (document.getElementById('container-bi').style.display === 'block') processarBI();
         }
@@ -165,11 +168,9 @@
         }
 
         function processarBI() {
-            const f = document.getElementById('filtroTempo').value;
-            const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
-            const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data.includes(f));
-
+            const filtrados = getDadosFiltrados();
             const catAgrupada = {}, diaMap = {};
+            
             filtrados.forEach(i => {
                 if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
                     const v = parseFloat(i.Valor) || 0;
@@ -189,7 +190,6 @@
                 }
             });
 
-            // Lógica de Pareto para o BI mobile ficar estratégico
             const entradasOrdenadas = Object.entries(catAgrupada).sort((a, b) => b[1] - a[1]);
             const TOP_N = 5;
             const labelsFinal = [];
@@ -237,6 +237,99 @@
         function updateChart(id, type, data, options) {
             if (charts[id]) charts[id].destroy();
             charts[id] = new Chart(document.getElementById(id), { type, data, options });
+        }
+
+        // --- NOVA FUNÇÃO DE RELATÓRIO ---
+        function gerarRelatorioHTML() {
+            const dados = getDadosFiltrados();
+            const periodo = document.getElementById('filtroTempo').options[document.getElementById('filtroTempo').selectedIndex].text;
+            
+            // Garantir que o BI processe antes de pegar as imagens dos gráficos
+            processarBI();
+
+            const imgDonut = document.getElementById('meuGrafico').toDataURL();
+            const imgBarras = document.getElementById('graficoBarras').toDataURL();
+            const imgLinha = document.getElementById('graficoLinha').toDataURL();
+
+            let tEnt = 0, tSai = 0;
+            const catResumo = {};
+            const receitas = [];
+
+            dados.forEach(i => {
+                const v = parseFloat(i.Valor) || 0;
+                const ehR = (i.Tipo || i.tipo || "").toLowerCase().trim() === "receita";
+                if(ehR) {
+                    tEnt += v;
+                    receitas.push(i);
+                } else {
+                    tSai += v;
+                    catResumo[i.Categoria] = (catResumo[i.Categoria] || 0) + v;
+                }
+            });
+
+            const topReceitas = receitas.sort((a,b) => b.Valor - a.Valor).slice(0, 10);
+            
+            const htmlConteudo = `
+                <html>
+                <head>
+                    <title>Relatório ${periodo}</title>
+                    <style>
+                        body { font-family: sans-serif; background: #121212; color: #e0e0e0; padding: 20px; }
+                        .card { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
+                        h2 { color: #3498db; border-bottom: 1px solid #333; padding-bottom: 10px; }
+                        .row { display: flex; justify-content: space-between; flex-wrap: wrap; }
+                        .metric { text-align: center; flex: 1; }
+                        .green { color: #2ecc71; } .red { color: #e74c3c; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #333; font-size: 14px; }
+                        .chart-img { max-width: 100%; height: auto; margin: 10px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Relatório Financeiro - ${periodo}</h1>
+                    
+                    <div class="card">
+                        <h2>Resumo Geral</h2>
+                        <div class="row">
+                            <div class="metric">Receitas<br><strong class="green">R$ ${tEnt.toFixed(2)}</strong></div>
+                            <div class="metric">Despesas<br><strong class="red">R$ ${tSai.toFixed(2)}</strong></div>
+                            <div class="metric">Saldo<br><strong>R$ ${(tEnt - tSai).toFixed(2)}</strong></div>
+                        </div>
+                        <center><img src="${imgDonut}" class="chart-img" style="width:250px"></center>
+                    </div>
+
+                    <div class="card">
+                        <h2>Top 10 Receitas</h2>
+                        <table>
+                            <tr><th>Item</th><th>Valor</th></tr>
+                            ${topReceitas.map(r => `<tr><td>${r.Item}</td><td class="green">R$ ${parseFloat(r.Valor).toFixed(2)}</td></tr>`).join('')}
+                        </table>
+                    </div>
+
+                    <div class="card">
+                        <h2>Gastos por Categoria</h2>
+                        <table>
+                            <tr><th>Categoria</th><th>Total</th></tr>
+                            ${Object.entries(catResumo).sort((a,b) => b[1]-a[1]).map(([c, v]) => `<tr><td>${c}</td><td class="red">R$ ${v.toFixed(2)}</td></tr>`).join('')}
+                        </table>
+                        <img src="${imgBarras}" class="chart-img">
+                    </div>
+
+                    <div class="card">
+                        <h2>Tendência de Gasto Acumulado</h2>
+                        <img src="${imgLinha}" class="chart-img">
+                    </div>
+
+                    <p style="text-align:center; color:#666; font-size: 10px;">Gerado em: ${new Date().toLocaleString()}</p>
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([htmlConteudo], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Relatorio_Financeiro_${periodo.replace('/', '_')}.html`;
+            link.click();
         }
 
         window.onload = carregarDados;
