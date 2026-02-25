@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Financas</title>
+    <title>Agente Finanças - BI & Controle</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <link rel="manifest" href="./manifest.json">
@@ -41,7 +41,7 @@
         <div class="chart-main">
             <canvas id="meuGrafico"></canvas>
             <div id="saldo-info">
-                <span style="font-size:0.6rem; color:#888">LIQUIDO</span>
+                <span style="font-size:0.6rem; color:#888">LÍQUIDO</span>
                 <span id="saldo-valor">R$ 0</span>
             </div>
         </div>
@@ -53,9 +53,9 @@
 
     <div class="controles">
         <button class="btn-nav active" id="tab-feed" onclick="mudarAba('feed')">📑 Extrato</button>
-        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📈 Resumo</button>
+        <button class="btn-nav" id="tab-bi" onclick="mudarAba('bi')">📈 BI / Estratégia</button>
         <button onclick="carregarDados()" class="btn-action" style="flex:0.25">🔄</button>
-        <button onclick="gerarRelatorioHTML()" class="btn-action" style="flex:0.25" title="Baixar Relatorio">📄</button>
+        <button onclick="gerarRelatorioHTML()" class="btn-action" style="flex:0.25" title="Baixar Relatório">📄</button>
     </div>
 
     <div class="controles">
@@ -72,7 +72,7 @@
             <canvas id="graficoBarras"></canvas>
         </div>
         <div class="card">
-            <h4>📈 Tendencia de Gasto (Acumulado)</h4>
+            <h4>📈 Tendência de Gasto (Acumulado)</h4>
             <canvas id="graficoLinha"></canvas>
         </div>
     </div>
@@ -82,13 +82,13 @@
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
         
         const MAPA_CATEGORIAS = {
-            'Alimentacao': ['mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche'],
-            'Habitacao': ['aluguel', 'luz', 'agua', 'internet', 'condominio', 'boleto', 'despesa', 'financiamento', 'impostos', 'reforma'],
-            'Transporte': ['uber', 'gasolina', 'combustivel', 'estacionamento'],
+            'Alimentação': ['mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche'],
+            'Habitação': ['aluguel', 'luz', 'água', 'internet', 'condomínio', 'boleto', 'despesa', 'financiamento', 'impostos', 'reforma'],
+            'Transporte': ['uber', 'gasolina', 'combustível', 'estacionamento'],
             'Lazer': ['cinema', 'viagem', 'netflix', 'bar', 'spotify', 'praia'],
-            'Saude': ['farmacia', 'medico', 'academia'],
-            'Compras': ['shopee', 'amazon', 'shein', 'mercado livre', 'roupas', 'eletronicos', 'eletrodomestico', 'shopping', 'brinquedo'],
-            'Contas': ['faculdade', 'esporte', 'servicos bancarios', 'pensao', 'celular', 'assinatura','odonto']
+            'Saúde': ['farmácia', 'médico', 'academia'],
+            'Compras': ['shopee', 'amazon', 'shein', 'mercado livre', 'roupas', 'eletrônicos', 'eletrodoméstico', 'shopping', 'brinquedo'],
+            'Contas': ['faculdade', 'esporte', 'serviços bancários', 'pensão', 'celular', 'assinatura','odonto']
         };
 
         let todosOsDados = [];
@@ -111,7 +111,7 @@
                 .sort()
                 .reverse();
 
-            let opt = '<option value="mes_atual">Mes Atual</option>';
+            let opt = '<option value="mes_atual">Mês Atual</option>';
             meses.forEach(m => opt += `<option value="${m}">${m}</option>`);
             seletor.innerHTML = opt;
         }
@@ -162,7 +162,7 @@
             document.getElementById('lista-transacoes').innerHTML = html || "<p style='text-align:center'>Vazio.</p>";
             
             updateChart('meuGrafico', 'doughnut', {
-                labels: ['Entradas', 'Saidas'],
+                labels: ['Entradas', 'Saídas'],
                 datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }]
             }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
         }
@@ -239,10 +239,12 @@
             charts[id] = new Chart(document.getElementById(id), { type, data, options });
         }
 
+        // --- NOVA FUNÇÃO DE RELATÓRIO ---
         function gerarRelatorioHTML() {
             const dados = getDadosFiltrados();
             const periodo = document.getElementById('filtroTempo').options[document.getElementById('filtroTempo').selectedIndex].text;
             
+            // Garantir que o BI processe antes de pegar as imagens dos gráficos
             processarBI();
 
             const imgDonut = document.getElementById('meuGrafico').toDataURL();
@@ -270,7 +272,7 @@
             const htmlConteudo = `
                 <html>
                 <head>
-                    <title>Relatorio ${periodo}</title>
+                    <title>Relatório ${periodo}</title>
                     <style>
                         body { font-family: sans-serif; background: #121212; color: #e0e0e0; padding: 20px; }
                         .card { background: #1e1e1e; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #333; }
@@ -284,7 +286,7 @@
                     </style>
                 </head>
                 <body>
-                    <h1>Relatorio Financeiro - ${periodo}</h1>
+                    <h1>Relatório Financeiro - ${periodo}</h1>
                     
                     <div class="card">
                         <h2>Resumo Geral</h2>
@@ -314,7 +316,7 @@
                     </div>
 
                     <div class="card">
-                        <h2>Tendencia de Gasto Acumulado</h2>
+                        <h2>Tendência de Gasto Acumulado</h2>
                         <img src="${imgLinha}" class="chart-img">
                     </div>
 
