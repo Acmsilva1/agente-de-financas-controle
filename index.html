@@ -12,20 +12,33 @@
             --bg: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0; 
             --border: #333333; --pink: #ff4081;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--border); margin-bottom: 15px; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; 
+            display: flex; flex-direction: column; align-items: center; 
+        }
+        .card { 
+            background: var(--card-bg); padding: 15px; border-radius: 20px; 
+            width: 100%; max-width: 450px; border: 1px solid var(--border); 
+            margin-bottom: 15px; box-sizing: border-box; 
+        }
         .chart-main { width: 180px; height: 180px; margin: 0 auto; position: relative; }
         #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
         #saldo-valor { font-weight: bold; font-size: 1.1rem; display: block; }
         .controles { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 450px; }
-        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; }
+        select, .btn-nav { 
+            background: var(--card-bg); color: white; border: 1px solid var(--border); 
+            padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; 
+        }
         .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
         .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
         .info { flex: 1; }
         .info strong { display: block; font-size: 0.9rem; }
-        .info small { color: #888; font-size: 0.75rem; }
         .cat-tag { color: var(--pink); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
-        .ai-comment { font-size: 11px; color: var(--blue); margin-top: 8px; background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; border-left: 3px solid var(--blue); }
+        .ai-comment { 
+            font-size: 11px; color: var(--blue); margin-top: 8px; 
+            background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; border-left: 3px solid var(--blue); 
+        }
         .valor { font-weight: bold; font-size: 0.95rem; text-align: right; min-width: 85px; }
         h4 { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--blue); text-transform: uppercase; }
         .tabela-bi { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
@@ -36,7 +49,7 @@
 </head>
 <body>
 
-    <div id="loading" class="loading-overlay">Carregando dados...</div>
+    <div id="loading" class="loading-overlay">Carregando...</div>
 
     <div class="card">
         <div class="chart-main">
@@ -154,10 +167,11 @@
             document.getElementById('container-bi').style.display = isFeed ? 'none' : 'block';
             document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${aba}`).classList.add('active');
+            
             if (!isFeed) {
-                // Força o navegador a processar o display:block antes de desenhar os gráficos
+                // FIX: Aguarda o elemento ficar visível no DOM antes de renderizar gráficos
                 requestAnimationFrame(() => {
-                    setTimeout(processarBI, 50);
+                    setTimeout(processarBI, 60);
                 });
             }
         }
@@ -176,7 +190,7 @@
             let tE = 0, tS = 0, htmlR = "", htmlD = "";
             [...dados].reverse().forEach(i => {
                 const v = parseFloat(i.Valor) || 0;
-                const ehR = (i.Tipo || "").toLowerCase().trim() === "receita";
+                const ehR = (i.Tipo || i.tipo || "").toLowerCase().trim() === "receita";
                 const card = `<div class="transacao"><div class="info"><small>${i.Data}</small><strong>${i.Item}</strong><span class="cat-tag">#${i.Categoria}</span>${i.Comentario_da_IA ? `<div class="ai-comment">🤖 ${i.Comentario_da_IA}</div>` : ''}</div><div class="valor" style="color:${ehR?'var(--green)':'var(--red)'}">${ehR?'+':'-'} R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div></div>`;
                 if(ehR) { tE += v; htmlR += card; } else { tS += v; htmlD += card; }
             });
@@ -195,7 +209,7 @@
             
             const catAgrupada = {}, diaMap = {};
             filtrados.forEach(i => {
-                if ((i.Tipo || "").toLowerCase() === 'despesa') {
+                if ((i.Tipo || i.tipo || "").toLowerCase().trim() === 'despesa') {
                     const v = parseFloat(i.Valor) || 0;
                     const d = i.Data.split('/')[0];
                     let cat = 'Geral';
