@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças - BI & Controle</title>
+    <title>Agente Finanças</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
@@ -70,14 +70,12 @@
 
         h4 { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Estilos da Tabela de Gastos */
         .tabela-bi { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         .tabela-bi th { text-align: left; color: #888; font-weight: normal; padding: 8px 5px; border-bottom: 1px solid var(--border); }
         .tabela-bi td { padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .tabela-bi tr:last-child td { border-bottom: none; }
         .tabela-bi .rank { color: var(--pink); font-weight: bold; width: 20px; }
 
-        /* Loading state */
         .loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -119,7 +117,14 @@
     </div>
 
     <div id="container-feed" class="card">
-        <div id="lista-transacoes"></div>
+        <div id="secao-receitas">
+            <h4 style="color: var(--green); border-bottom: 1px solid #2ecc7133; padding-bottom: 5px;">💰 Receitas</h4>
+            <div id="lista-receitas"></div>
+        </div>
+        <div id="secao-despesas" style="margin-top: 25px;">
+            <h4 style="color: var(--red); border-bottom: 1px solid #e74c3c33; padding-bottom: 5px;">💸 Despesas</h4>
+            <div id="lista-despesas"></div>
+        </div>
     </div>
 
     <div id="container-bi" style="display: none; width: 100%; max-width: 450px;">
@@ -135,9 +140,7 @@
                         <th style="text-align: right;">Valor Total</th>
                     </tr>
                 </thead>
-                <tbody id="corpo-tabela-gastos">
-                    <!-- Gerado via JS -->
-                </tbody>
+                <tbody id="corpo-tabela-gastos"></tbody>
             </table>
         </div>
         <div class="card">
@@ -150,15 +153,41 @@
         Chart.register(ChartDataLabels);
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
         
-        const MAPA_CATEGORIAS = {
-            'Alimentação': ['mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche'],
-            'Habitação': ['aluguel', 'luz', 'água', 'internet', 'condomínio', 'boleto', 'despesa', 'financiamento', 'impostos', 'reforma'],
-            'Transporte': ['uber', 'gasolina', 'combustível', 'estacionamento'],
-            'Lazer': ['cinema', 'viagem', 'netflix', 'bar', 'spotify', 'praia'],
-            'Saúde': ['farmácia', 'médico', 'academia'],
-            'Compras': ['shopee', 'amazon', 'shein', 'mercado livre', 'roupas', 'eletrônicos', 'eletrodoméstico', 'shopping', 'brinquedo'],
-            'Contas': ['faculdade', 'esporte', 'serviços bancários', 'pensão', 'celular', 'assinatura','odonto']
-        };
+        CATEGORIAS_MAP = {
+    'Alimentação': [
+        'mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche', 
+        'picolé', 'biscoito', 'bala', 'doce', 'sorvete', 'café', 'bebida', 'açougue', 
+        'supermercado', 'feira', 'confeitaria', 'marmita', 'delivery', 'vinho', 'cerveja'
+    ],
+    'Habitação': [
+        'luz', 'água', 'internet', 'condomínio', 'boleto', 'reforma', 'limpeza', 
+        'aluguel', 'iptu', 'gás', 'móveis', 'decoração', 'manutenção', 'reparos', 'lavanderia'
+    ],
+    'Transporte': [
+        'uber', 'gasolina', 'combustível', 'estacionamento', 'pedágio', 'oficina', 
+        '99pop', 'ônibus', 'metrô', 'ipva', 'seguro auto', 'troca de óleo', 'pneu', 'licenciamento'
+    ],
+    'Lazer': [
+        'cinema', 'viagem', 'netflix', 'bar', 'spotify', 'praia', 'games', 'show', 
+        'teatro', 'hospedagem', 'passagem aérea', 'livro', 'hbomax', 'disney+', 'estádio', 'futebol'
+    ],
+    'Saúde': [
+        'farmácia', 'médico', 'academia', 'suplemento', 'dentista', 'exame', 
+        'consulta', 'psicólogo', 'hospital', 'plano de saúde', 'drogaria', 'ótica'
+    ],
+    'Compras': [
+        'shopee', 'amazon', 'shein', 'mercado livre', 'roupas', 'eletrônicos', 
+        'eletrodoméstico', 'presente', 'magalu', 'ali-express', 'perfume', 'cosmético', 'tenis', 'acessórios'
+    ],
+    'Contas': [
+        'faculdade', 'esporte', 'serviços bancários', 'pensão', 'celular', 'assinatura', 
+        'imposto', 'cartão de crédito', 'empréstimo', 'tarifa', 'seguro', 'anuidade', 'mei', 'irpf'
+    ],
+    'Receitas': [
+        'salário', 'ticket', 'vale', 'vendas', 'recebi', 'pix recebido', 'reembolso', 
+        'lucro de bolo', 'rendimento', 'dividendo', 'bônus', 'décimo terceiro', 'extra', 'freelance'
+    ]
+}
 
         let todosOsDados = [];
         let charts = {};
@@ -172,7 +201,6 @@
                 filtrarERenderizar();
             } catch (e) { 
                 console.error("Erro na API", e); 
-                document.getElementById('lista-transacoes').innerHTML = "<p style='color:red; text-align:center;'>Erro ao carregar dados. Verifique a conexão.</p>";
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
@@ -182,13 +210,11 @@
             const seletor = document.getElementById('filtroTempo');
             const agora = new Date();
             const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
-            
             const meses = [...new Set(dados.map(i => {
                 if(!i.Data) return null;
                 const partes = i.Data.split(' ')[0].split('/');
                 return partes.length >= 3 ? `${partes[1]}/${partes[2]}` : null;
             }))].filter(m => m && m !== mesAt).sort().reverse();
-
             let opt = '<option value="mes_atual">Mês Atual</option>';
             meses.forEach(m => opt += `<option value="${m}">${m}</option>`);
             seletor.innerHTML = opt;
@@ -207,24 +233,23 @@
             const f = document.getElementById('filtroTempo').value;
             const agora = new Date();
             const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
-            
             const filtrados = (f === "mes_atual") 
                 ? todosOsDados.filter(i => i.Data && i.Data.includes(mesAt)) 
                 : todosOsDados.filter(i => i.Data && i.Data.includes(f));
-            
             renderizarExtrato(filtrados);
             if (document.getElementById('container-bi').style.display === 'block') processarBI();
         }
 
         function renderizarExtrato(dados) {
-            let tE = 0, tS = 0, html = "";
+            let tE = 0, tS = 0;
+            let htmlReceitas = "", htmlDespesas = "";
+            
             [...dados].reverse().forEach(i => {
                 const v = parseFloat(i.Valor) || 0;
                 const tipoRaw = (i.Tipo || i.tipo || "").toLowerCase().trim();
                 const ehR = tipoRaw === "receita";
-                ehR ? tE += v : tS += v;
                 
-                html += `
+                const card = `
                 <div class="transacao">
                     <div class="info">
                         <small>${i.Data}</small>
@@ -236,29 +261,22 @@
                         ${ehR?'+':'-'} R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
                     </div>
                 </div>`;
+
+                if(ehR) { tE += v; htmlReceitas += card; }
+                else { tS += v; htmlDespesas += card; }
             });
             
             document.getElementById('saldo-valor').innerText = `R$ ${(tE-tS).toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
             document.getElementById('t-ent').innerText = `R$ ${tE.toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
             document.getElementById('t-sai').innerText = `R$ ${tS.toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
-            document.getElementById('lista-transacoes').innerHTML = html || "<p style='text-align:center'>Nenhuma transação encontrada.</p>";
+            
+            document.getElementById('lista-receitas').innerHTML = htmlReceitas || "<p style='font-size:0.8rem; opacity:0.5; padding:10px;'>Sem entradas.</p>";
+            document.getElementById('lista-despesas').innerHTML = htmlDespesas || "<p style='font-size:0.8rem; opacity:0.5; padding:10px;'>Sem saídas.</p>";
             
             updateChart('meuGrafico', 'doughnut', {
                 labels: ['Receitas', 'Despesas'],
-                datasets: [{ 
-                    data: [tE, tS], 
-                    backgroundColor: ['#2ecc71', '#e74c3c'], 
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            }, { 
-                cutout: '82%', 
-                plugins: { 
-                    datalabels: { display: false }, 
-                    legend: { display: false },
-                    tooltip: { enabled: true }
-                } 
-            });
+                datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }]
+            }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
         }
 
         function processarBI() {
@@ -275,7 +293,6 @@
                     const v = parseFloat(i.Valor) || 0;
                     const d = i.Data.split('/')[0];
                     const catOriginal = i.Categoria || 'Geral';
-                    
                     let catFinal = null;
                     for (const [macro, subs] of Object.entries(MAPA_CATEGORIAS)) {
                         if (subs.some(s => catOriginal.toLowerCase().includes(s.toLowerCase()))) {
@@ -283,111 +300,41 @@
                         }
                     }
                     if(!catFinal) catFinal = catOriginal;
-
                     catAgrupada[catFinal] = (catAgrupada[catFinal] || 0) + v;
                     diaMap[d] = (diaMap[d] || 0) + v;
                 }
             });
 
             const entradasOrdenadas = Object.entries(catAgrupada).sort((a, b) => b[1] - a[1]);
-            const TOP_N = 5;
-            const labelsFinal = [];
-            const valoresFinal = [];
-            let outrosSoma = 0;
-
-            // Limpa e preenche a tabela de BI
-            const corpoTabela = document.getElementById('corpo-tabela-gastos');
-            let htmlTabela = "";
+            const labelsFinal = [], valoresFinal = [];
+            let htmlTabela = "", outrosSoma = 0;
 
             entradasOrdenadas.forEach(([label, valor], index) => {
-                // Prepara dados do gráfico
-                if (index < TOP_N) {
-                    labelsFinal.push(label);
-                    valoresFinal.push(valor);
-                } else {
-                    outrosSoma += valor;
-                }
-
-                // Prepara HTML da tabela (todas as categorias)
-                htmlTabela += `
-                    <tr>
-                        <td class="rank">${index + 1}</td>
-                        <td>${label}</td>
-                        <td style="text-align: right; font-weight: bold;">R$ ${valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                `;
+                if (index < 5) { labelsFinal.push(label); valoresFinal.push(valor); }
+                else { outrosSoma += valor; }
+                htmlTabela += `<tr><td class="rank">${index + 1}</td><td>${label}</td><td style="text-align: right; font-weight: bold;">R$ ${valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
             });
 
-            corpoTabela.innerHTML = htmlTabela || "<tr><td colspan='3' style='text-align:center'>Sem dados</td></tr>";
-
-            if (outrosSoma > 0) {
-                labelsFinal.push("Outros");
-                valoresFinal.push(outrosSoma);
-            }
+            document.getElementById('corpo-tabela-gastos').innerHTML = htmlTabela || "<tr><td colspan='3' style='text-align:center'>Sem dados</td></tr>";
+            if (outrosSoma > 0) { labelsFinal.push("Outros"); valoresFinal.push(outrosSoma); }
 
             updateChart('graficoBarras', 'bar', {
                 labels: labelsFinal,
                 datasets: [{ data: valoresFinal, backgroundColor: '#ff4081', borderRadius: 6 }]
-            }, { 
-                indexAxis: 'y', 
-                plugins: { 
-                    legend: { display: false },
-                    datalabels: { 
-                        color: '#fff', 
-                        anchor: 'end', 
-                        align: 'right', 
-                        offset: 4,
-                        formatter: v => `R$ ${v.toFixed(0)}`, 
-                        font: { weight: 'bold', size: 10 } 
-                    } 
-                },
-                scales: { 
-                    x: { display: false }, 
-                    y: { 
-                        ticks: { color: '#fff', font: { size: 11 } }, 
-                        grid: { display: false } 
-                    } 
-                },
-                layout: { padding: { right: 40 } }
-            });
+            }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff', anchor: 'end', align: 'right', formatter: v => `R$ ${v.toFixed(0)}`, font: { size: 10 } } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } }, layout: { padding: { right: 40 } } });
 
             const dias = Object.keys(diaMap).sort((a,b) => parseInt(a) - parseInt(b));
             let acc = 0;
             updateChart('graficoLinha', 'line', {
                 labels: dias,
-                datasets: [{ 
-                    data: dias.map(d => { acc += diaMap[d]; return acc; }), 
-                    borderColor: '#3498db', 
-                    backgroundColor: 'rgba(52, 152, 219, 0.1)', 
-                    fill: true, 
-                    tension: 0.4,
-                    pointRadius: 2
-                }]
-            }, {
-                plugins: { 
-                    legend: { display: false },
-                    datalabels: { 
-                        display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, 
-                        backgroundColor: '#3498db', 
-                        color: '#fff', 
-                        borderRadius: 4, 
-                        padding: 4,
-                        formatter: v => `R$ ${v.toFixed(0)}` 
-                    } 
-                },
-                scales: { 
-                    y: { display: false }, 
-                    x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } } 
-                }
-            });
+                datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }]
+            }, { plugins: { legend: { display: false }, datalabels: { display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, backgroundColor: '#3498db', color: '#fff', borderRadius: 4, formatter: v => `R$ ${v.toFixed(0)}` } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#888' } } } });
         }
 
         function updateChart(id, type, data, options) {
             if (charts[id]) charts[id].destroy();
             const ctx = document.getElementById(id);
-            if (ctx) {
-                charts[id] = new Chart(ctx, { type, data, options });
-            }
+            if (ctx) charts[id] = new Chart(ctx, { type, data, options });
         }
 
         window.onload = carregarDados;
