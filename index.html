@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agente Finanças</title>
+    <title>Agente Finanças - BI & Controle</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
     <style>
@@ -14,78 +14,40 @@
         }
         body { 
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); 
-            color: var(--text-main); 
-            margin: 0; 
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+            background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; 
+            display: flex; flex-direction: column; align-items: center; 
         }
         .card { 
-            background: var(--card-bg); 
-            padding: 15px; 
-            border-radius: 20px; 
-            width: 100%; 
-            max-width: 450px; 
-            border: 1px solid var(--border); 
-            margin-bottom: 15px; 
-            box-sizing: border-box; 
+            background: var(--card-bg); padding: 15px; border-radius: 20px; 
+            width: 100%; max-width: 450px; border: 1px solid var(--border); 
+            margin-bottom: 15px; box-sizing: border-box; 
         }
-        
         .chart-main { width: 180px; height: 180px; margin: 0 auto; position: relative; }
         #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
         #saldo-valor { font-weight: bold; font-size: 1.1rem; display: block; }
-
         .controles { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 450px; }
         select, .btn-nav { 
-            background: var(--card-bg); 
-            color: white; 
-            border: 1px solid var(--border); 
-            padding: 10px; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            flex: 1; 
-            font-size: 0.85rem; 
-            transition: all 0.2s ease;
+            background: var(--card-bg); color: white; border: 1px solid var(--border); 
+            padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; 
         }
         .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
-
         .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
         .info { flex: 1; }
         .info strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
         .info small { color: #888; font-size: 0.75rem; display: block; }
         .cat-tag { color: var(--pink); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
         .ai-comment { 
-            font-size: 11px; 
-            color: var(--blue); 
-            margin-top: 8px; 
-            background: rgba(52, 152, 219, 0.08); 
-            padding: 8px; 
-            border-radius: 8px; 
-            border-left: 3px solid var(--blue); 
-            line-height: 1.3; 
+            font-size: 11px; color: var(--blue); margin-top: 8px; 
+            background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; 
+            border-left: 3px solid var(--blue); line-height: 1.3; 
         }
         .valor { font-weight: bold; font-size: 0.95rem; text-align: right; min-width: 85px; }
-
         h4 { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; }
-
         .tabela-bi { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         .tabela-bi th { text-align: left; color: #888; font-weight: normal; padding: 8px 5px; border-bottom: 1px solid var(--border); }
         .tabela-bi td { padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .tabela-bi tr:last-child td { border-bottom: none; }
-        .tabela-bi .rank { color: var(--pink); font-weight: bold; width: 20px; }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: var(--bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 0.5s;
-        }
+        .rank { color: var(--pink); font-weight: bold; width: 20px; }
+        .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 1000; }
     </style>
 </head>
 <body>
@@ -117,34 +79,23 @@
     </div>
 
     <div id="container-feed" class="card">
-        <div id="secao-receitas">
-            <h4 style="color: var(--green); border-bottom: 1px solid #2ecc7133; padding-bottom: 5px;">💰 Receitas</h4>
-            <div id="lista-receitas"></div>
-        </div>
-        <div id="secao-despesas" style="margin-top: 25px;">
-            <h4 style="color: var(--red); border-bottom: 1px solid #e74c3c33; padding-bottom: 5px;">💸 Despesas</h4>
-            <div id="lista-despesas"></div>
-        </div>
+        <h4 style="color: var(--green); border-bottom: 1px solid #2ecc7133; padding-bottom: 5px;">💰 Receitas</h4>
+        <div id="lista-receitas"></div>
+        <h4 style="color: var(--red); border-bottom: 1px solid #e74c3c33; padding-bottom: 5px; margin-top: 25px;">💸 Despesas</h4>
+        <div id="lista-despesas"></div>
     </div>
 
     <div id="container-bi" style="display: none; width: 100%; max-width: 450px;">
         <div class="card">
             <h4>📊 Maiores Gastos</h4>
             <canvas id="graficoBarras"></canvas>
-            
             <table class="tabela-bi">
-                <thead>
-                    <tr>
-                        <th class="rank">#</th>
-                        <th>Categoria</th>
-                        <th style="text-align: right;">Valor Total</th>
-                    </tr>
-                </thead>
+                <thead><tr><th class="rank">#</th><th>Categoria</th><th style="text-align: right;">Valor</th></tr></thead>
                 <tbody id="corpo-tabela-gastos"></tbody>
             </table>
         </div>
         <div class="card">
-            <h4>📈 Tendência de Gasto (Acumulado)</h4>
+            <h4>📈 Tendência (Acumulado)</h4>
             <canvas id="graficoLinha"></canvas>
         </div>
     </div>
@@ -152,7 +103,6 @@
     <script>
         Chart.register(ChartDataLabels);
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
-        
         CATEGORIAS_MAP = {
     'Alimentação': [
         'mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche', 
@@ -199,11 +149,8 @@
                 todosOsDados = await res.json();
                 popularSeletor(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { 
-                console.error("Erro na API", e); 
-            } finally {
-                document.getElementById('loading').style.display = 'none';
-            }
+            } catch (e) { console.error(e); }
+            finally { document.getElementById('loading').style.display = 'none'; }
         }
 
         function popularSeletor(dados) {
@@ -221,12 +168,11 @@
         }
 
         function mudarAba(aba) {
-            const isFeed = aba === 'feed';
-            document.getElementById('container-feed').style.display = isFeed ? 'block' : 'none';
-            document.getElementById('container-bi').style.display = isFeed ? 'none' : 'block';
+            document.getElementById('container-feed').style.display = (aba === 'feed') ? 'block' : 'none';
+            document.getElementById('container-bi').style.display = (aba === 'bi') ? 'block' : 'none';
             document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${aba}`).classList.add('active');
-            if (!isFeed) setTimeout(processarBI, 100);
+            if (aba === 'bi') setTimeout(processarBI, 50);
         }
 
         function filtrarERenderizar() {
@@ -241,94 +187,50 @@
         }
 
         function renderizarExtrato(dados) {
-            let tE = 0, tS = 0;
-            let htmlReceitas = "", htmlDespesas = "";
-            
+            let tE = 0, tS = 0, htmlR = "", htmlD = "";
             [...dados].reverse().forEach(i => {
                 const v = parseFloat(i.Valor) || 0;
-                const tipoRaw = (i.Tipo || i.tipo || "").toLowerCase().trim();
-                const ehR = tipoRaw === "receita";
-                
-                const card = `
-                <div class="transacao">
-                    <div class="info">
-                        <small>${i.Data}</small>
-                        <strong>${i.Item}</strong>
-                        <span class="cat-tag">#${i.Categoria}</span>
-                        ${i.Comentario_da_IA ? `<div class="ai-comment">🤖 ${i.Comentario_da_IA}</div>` : ''}
-                    </div>
-                    <div class="valor" style="color:${ehR?'var(--green)':'var(--red)'}">
-                        ${ehR?'+':'-'} R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </div>
-                </div>`;
-
-                if(ehR) { tE += v; htmlReceitas += card; }
-                else { tS += v; htmlDespesas += card; }
+                const ehR = (i.Tipo || i.tipo || "").toLowerCase().trim() === "receita";
+                const card = `<div class="transacao"><div class="info"><small>${i.Data}</small><strong>${i.Item}</strong><span class="cat-tag">#${i.Categoria}</span>${i.Comentario_da_IA ? `<div class="ai-comment">🤖 ${i.Comentario_da_IA}</div>` : ''}</div><div class="valor" style="color:${ehR?'var(--green)':'var(--red)'}">${ehR?'+':'-'} R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div></div>`;
+                if(ehR) { tE += v; htmlR += card; } else { tS += v; htmlD += card; }
             });
-            
             document.getElementById('saldo-valor').innerText = `R$ ${(tE-tS).toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
             document.getElementById('t-ent').innerText = `R$ ${tE.toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
             document.getElementById('t-sai').innerText = `R$ ${tS.toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
-            
-            document.getElementById('lista-receitas').innerHTML = htmlReceitas || "<p style='font-size:0.8rem; opacity:0.5; padding:10px;'>Sem entradas.</p>";
-            document.getElementById('lista-despesas').innerHTML = htmlDespesas || "<p style='font-size:0.8rem; opacity:0.5; padding:10px;'>Sem saídas.</p>";
-            
-            updateChart('meuGrafico', 'doughnut', {
-                labels: ['Receitas', 'Despesas'],
-                datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }]
-            }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
+            document.getElementById('lista-receitas').innerHTML = htmlR || "<p style='font-size:0.75rem; padding:10px;'>Vazio</p>";
+            document.getElementById('lista-despesas').innerHTML = htmlD || "<p style='font-size:0.75rem; padding:10px;'>Vazio</p>";
+            updateChart('meuGrafico', 'doughnut', { labels: ['Rec', 'Desp'], datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }] }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
         }
 
         function processarBI() {
             const f = document.getElementById('filtroTempo').value;
             const agora = new Date();
             const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
-            const filtrados = (f === "mes_atual") 
-                ? todosOsDados.filter(i => i.Data && i.Data.includes(mesAt)) 
-                : todosOsDados.filter(i => i.Data && i.Data.includes(f));
-
+            const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data && i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data && i.Data.includes(f));
             const catAgrupada = {}, diaMap = {};
             filtrados.forEach(i => {
                 if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
                     const v = parseFloat(i.Valor) || 0;
                     const d = i.Data.split('/')[0];
-                    const catOriginal = i.Categoria || 'Geral';
                     let catFinal = null;
-                    for (const [macro, subs] of Object.entries(MAPA_CATEGORIAS)) {
-                        if (subs.some(s => catOriginal.toLowerCase().includes(s.toLowerCase()))) {
-                            catFinal = macro; break;
-                        }
-                    }
-                    if(!catFinal) catFinal = catOriginal;
+                    for (const [m, s] of Object.entries(MAPA_CATEGORIAS)) { if (s.some(x => (i.Categoria||'').toLowerCase().includes(x))) { catFinal = m; break; } }
+                    catFinal = catFinal || i.Categoria || 'Geral';
                     catAgrupada[catFinal] = (catAgrupada[catFinal] || 0) + v;
                     diaMap[d] = (diaMap[d] || 0) + v;
                 }
             });
-
-            const entradasOrdenadas = Object.entries(catAgrupada).sort((a, b) => b[1] - a[1]);
-            const labelsFinal = [], valoresFinal = [];
-            let htmlTabela = "", outrosSoma = 0;
-
-            entradasOrdenadas.forEach(([label, valor], index) => {
-                if (index < 5) { labelsFinal.push(label); valoresFinal.push(valor); }
-                else { outrosSoma += valor; }
-                htmlTabela += `<tr><td class="rank">${index + 1}</td><td>${label}</td><td style="text-align: right; font-weight: bold;">R$ ${valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+            const ordenados = Object.entries(catAgrupada).sort((a,b) => b[1]-a[1]);
+            let labels = [], valores = [], html = "", outros = 0;
+            ordenados.forEach(([l, v], index) => {
+                if(index < 5) { labels.push(l); valores.push(v); } else { outros += v; }
+                html += `<tr><td class="rank">${index+1}</td><td>${l}</td><td style="text-align:right">R$ ${v.toFixed(0)}</td></tr>`;
             });
-
-            document.getElementById('corpo-tabela-gastos').innerHTML = htmlTabela || "<tr><td colspan='3' style='text-align:center'>Sem dados</td></tr>";
-            if (outrosSoma > 0) { labelsFinal.push("Outros"); valoresFinal.push(outrosSoma); }
-
-            updateChart('graficoBarras', 'bar', {
-                labels: labelsFinal,
-                datasets: [{ data: valoresFinal, backgroundColor: '#ff4081', borderRadius: 6 }]
-            }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff', anchor: 'end', align: 'right', formatter: v => `R$ ${v.toFixed(0)}`, font: { size: 10 } } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } }, layout: { padding: { right: 40 } } });
-
-            const dias = Object.keys(diaMap).sort((a,b) => parseInt(a) - parseInt(b));
+            if(outros > 0) { labels.push("Outros"); valores.push(outros); }
+            document.getElementById('corpo-tabela-gastos').innerHTML = html;
+            updateChart('graficoBarras', 'bar', { labels, datasets: [{ data: valores, backgroundColor: '#ff4081', borderRadius: 6 }] }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff', formatter: v => `R$ ${v.toFixed(0)}` } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } } });
+            const dias = Object.keys(diaMap).sort((a,b) => a-b);
             let acc = 0;
-            updateChart('graficoLinha', 'line', {
-                labels: dias,
-                datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }]
-            }, { plugins: { legend: { display: false }, datalabels: { display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, backgroundColor: '#3498db', color: '#fff', borderRadius: 4, formatter: v => `R$ ${v.toFixed(0)}` } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#888' } } } });
+            updateChart('graficoLinha', 'line', { labels: dias, datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#3498db', fill: true, tension: 0.4 }] }, { plugins: { legend: { display: false }, datalabels: { display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, formatter: v => `R$ ${v.toFixed(0)}` } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#888' } } } });
         }
 
         function updateChart(id, type, data, options) {
@@ -336,7 +238,6 @@
             const ctx = document.getElementById(id);
             if (ctx) charts[id] = new Chart(ctx, { type, data, options });
         }
-
         window.onload = carregarDados;
     </script>
 </body>
