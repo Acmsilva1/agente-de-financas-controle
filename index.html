@@ -12,39 +12,23 @@
             --bg: #121212; --card-bg: #1e1e1e; --text-main: #e0e0e0; 
             --border: #333333; --pink: #ff4081;
         }
-        body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; 
-            display: flex; flex-direction: column; align-items: center; 
-        }
-        .card { 
-            background: var(--card-bg); padding: 15px; border-radius: 20px; 
-            width: 100%; max-width: 450px; border: 1px solid var(--border); 
-            margin-bottom: 15px; box-sizing: border-box; 
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--border); margin-bottom: 15px; box-sizing: border-box; }
         .chart-main { width: 180px; height: 180px; margin: 0 auto; position: relative; }
         #saldo-info { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
         #saldo-valor { font-weight: bold; font-size: 1.1rem; display: block; }
         .controles { display: flex; gap: 8px; margin-bottom: 12px; width: 100%; max-width: 450px; }
-        select, .btn-nav { 
-            background: var(--card-bg); color: white; border: 1px solid var(--border); 
-            padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; 
-        }
+        select, .btn-nav { background: var(--card-bg); color: white; border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; flex: 1; font-size: 0.85rem; }
         .btn-nav.active { background: var(--blue); border-color: var(--blue); font-weight: bold; }
         .transacao { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 5px; border-bottom: 1px solid var(--border); gap: 10px; }
         .info { flex: 1; }
-        .info strong { display: block; font-size: 0.9rem; margin-bottom: 2px; }
-        .info small { color: #888; font-size: 0.75rem; display: block; }
+        .info strong { display: block; font-size: 0.9rem; }
+        .info small { color: #888; font-size: 0.75rem; }
         .cat-tag { color: var(--pink); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
-        .ai-comment { 
-            font-size: 11px; color: var(--blue); margin-top: 8px; 
-            background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; 
-            border-left: 3px solid var(--blue); line-height: 1.3; 
-        }
+        .ai-comment { font-size: 11px; color: var(--blue); margin-top: 8px; background: rgba(52, 152, 219, 0.08); padding: 8px; border-radius: 8px; border-left: 3px solid var(--blue); }
         .valor { font-weight: bold; font-size: 0.95rem; text-align: right; min-width: 85px; }
-        h4 { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; }
+        h4 { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--blue); text-transform: uppercase; }
         .tabela-bi { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-        .tabela-bi th { text-align: left; color: #888; font-weight: normal; padding: 8px 5px; border-bottom: 1px solid var(--border); }
         .tabela-bi td { padding: 10px 5px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .rank { color: var(--pink); font-weight: bold; width: 20px; }
         .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 1000; }
@@ -90,12 +74,11 @@
             <h4>📊 Maiores Gastos</h4>
             <canvas id="graficoBarras"></canvas>
             <table class="tabela-bi">
-                <thead><tr><th class="rank">#</th><th>Categoria</th><th style="text-align: right;">Valor</th></tr></thead>
                 <tbody id="corpo-tabela-gastos"></tbody>
             </table>
         </div>
         <div class="card">
-            <h4>📈 Tendência (Acumulado)</h4>
+            <h4>📈 Tendência</h4>
             <canvas id="graficoLinha"></canvas>
         </div>
     </div>
@@ -155,30 +138,33 @@
 
         function popularSeletor(dados) {
             const seletor = document.getElementById('filtroTempo');
-            const agora = new Date();
-            const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
             const meses = [...new Set(dados.map(i => {
                 if(!i.Data) return null;
-                const partes = i.Data.split(' ')[0].split('/');
-                return partes.length >= 3 ? `${partes[1]}/${partes[2]}` : null;
-            }))].filter(m => m && m !== mesAt).sort().reverse();
+                const p = i.Data.split(' ')[0].split('/');
+                return p.length >= 3 ? `${p[1]}/${p[2]}` : null;
+            }))].filter(m => m).sort().reverse();
             let opt = '<option value="mes_atual">Mês Atual</option>';
             meses.forEach(m => opt += `<option value="${m}">${m}</option>`);
             seletor.innerHTML = opt;
         }
 
         function mudarAba(aba) {
-            document.getElementById('container-feed').style.display = (aba === 'feed') ? 'block' : 'none';
-            document.getElementById('container-bi').style.display = (aba === 'bi') ? 'block' : 'none';
+            const isFeed = (aba === 'feed');
+            document.getElementById('container-feed').style.display = isFeed ? 'block' : 'none';
+            document.getElementById('container-bi').style.display = isFeed ? 'none' : 'block';
             document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
             document.getElementById(`tab-${aba}`).classList.add('active');
-            if (aba === 'bi') setTimeout(processarBI, 50);
+            if (!isFeed) {
+                // Força o navegador a processar o display:block antes de desenhar os gráficos
+                requestAnimationFrame(() => {
+                    setTimeout(processarBI, 50);
+                });
+            }
         }
 
         function filtrarERenderizar() {
             const f = document.getElementById('filtroTempo').value;
-            const agora = new Date();
-            const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
+            const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
             const filtrados = (f === "mes_atual") 
                 ? todosOsDados.filter(i => i.Data && i.Data.includes(mesAt)) 
                 : todosOsDados.filter(i => i.Data && i.Data.includes(f));
@@ -190,53 +176,55 @@
             let tE = 0, tS = 0, htmlR = "", htmlD = "";
             [...dados].reverse().forEach(i => {
                 const v = parseFloat(i.Valor) || 0;
-                const ehR = (i.Tipo || i.tipo || "").toLowerCase().trim() === "receita";
+                const ehR = (i.Tipo || "").toLowerCase().trim() === "receita";
                 const card = `<div class="transacao"><div class="info"><small>${i.Data}</small><strong>${i.Item}</strong><span class="cat-tag">#${i.Categoria}</span>${i.Comentario_da_IA ? `<div class="ai-comment">🤖 ${i.Comentario_da_IA}</div>` : ''}</div><div class="valor" style="color:${ehR?'var(--green)':'var(--red)'}">${ehR?'+':'-'} R$ ${v.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div></div>`;
                 if(ehR) { tE += v; htmlR += card; } else { tS += v; htmlD += card; }
             });
-            document.getElementById('saldo-valor').innerText = `R$ ${(tE-tS).toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
-            document.getElementById('t-ent').innerText = `R$ ${tE.toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
-            document.getElementById('t-sai').innerText = `R$ ${tS.toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
-            document.getElementById('lista-receitas').innerHTML = htmlR || "<p style='font-size:0.75rem; padding:10px;'>Vazio</p>";
-            document.getElementById('lista-despesas').innerHTML = htmlD || "<p style='font-size:0.75rem; padding:10px;'>Vazio</p>";
-            updateChart('meuGrafico', 'doughnut', { labels: ['Rec', 'Desp'], datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }] }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
+            document.getElementById('saldo-valor').innerText = `R$ ${(tE-tS).toFixed(0)}`;
+            document.getElementById('t-ent').innerText = `R$ ${tE.toFixed(0)}`;
+            document.getElementById('t-sai').innerText = `R$ ${tS.toFixed(0)}`;
+            document.getElementById('lista-receitas').innerHTML = htmlR || "<p style='padding:10px; font-size:0.8rem;'>Vazio</p>";
+            document.getElementById('lista-despesas').innerHTML = htmlD || "<p style='padding:10px; font-size:0.8rem;'>Vazio</p>";
+            updateChart('meuGrafico', 'doughnut', { labels: ['R', 'D'], datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }] }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
         }
 
         function processarBI() {
             const f = document.getElementById('filtroTempo').value;
-            const agora = new Date();
-            const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
+            const mesAt = `${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`;
             const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data && i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data && i.Data.includes(f));
+            
             const catAgrupada = {}, diaMap = {};
             filtrados.forEach(i => {
-                if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
+                if ((i.Tipo || "").toLowerCase() === 'despesa') {
                     const v = parseFloat(i.Valor) || 0;
                     const d = i.Data.split('/')[0];
-                    let catFinal = null;
-                    for (const [m, s] of Object.entries(MAPA_CATEGORIAS)) { if (s.some(x => (i.Categoria||'').toLowerCase().includes(x))) { catFinal = m; break; } }
-                    catFinal = catFinal || i.Categoria || 'Geral';
-                    catAgrupada[catFinal] = (catAgrupada[catFinal] || 0) + v;
+                    let cat = 'Geral';
+                    for (const [m, s] of Object.entries(MAPA_CATEGORIAS)) { if (s.some(x => (i.Categoria||'').toLowerCase().includes(x))) { cat = m; break; } }
+                    catAgrupada[cat] = (catAgrupada[cat] || 0) + v;
                     diaMap[d] = (diaMap[d] || 0) + v;
                 }
             });
-            const ordenados = Object.entries(catAgrupada).sort((a,b) => b[1]-a[1]);
-            let labels = [], valores = [], html = "", outros = 0;
-            ordenados.forEach(([l, v], index) => {
-                if(index < 5) { labels.push(l); valores.push(v); } else { outros += v; }
+
+            const ord = Object.entries(catAgrupada).sort((a,b) => b[1]-a[1]);
+            let labs = [], vals = [], html = "";
+            ord.forEach(([l, v], index) => {
+                labs.push(l); vals.push(v);
                 html += `<tr><td class="rank">${index+1}</td><td>${l}</td><td style="text-align:right">R$ ${v.toFixed(0)}</td></tr>`;
             });
-            if(outros > 0) { labels.push("Outros"); valores.push(outros); }
-            document.getElementById('corpo-tabela-gastos').innerHTML = html;
-            updateChart('graficoBarras', 'bar', { labels, datasets: [{ data: valores, backgroundColor: '#ff4081', borderRadius: 6 }] }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff', formatter: v => `R$ ${v.toFixed(0)}` } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } } });
+            document.getElementById('corpo-tabela-gastos').innerHTML = html || "<tr><td>Sem dados</td></tr>";
+            
+            updateChart('graficoBarras', 'bar', { labels: labs, datasets: [{ data: vals, backgroundColor: '#ff4081', borderRadius: 6 }] }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff', formatter: v => v.toFixed(0) } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } } });
+            
             const dias = Object.keys(diaMap).sort((a,b) => a-b);
             let acc = 0;
-            updateChart('graficoLinha', 'line', { labels: dias, datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#3498db', fill: true, tension: 0.4 }] }, { plugins: { legend: { display: false }, datalabels: { display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, formatter: v => `R$ ${v.toFixed(0)}` } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#888' } } } });
+            updateChart('graficoLinha', 'line', { labels: dias, datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#3498db', fill: true, tension: 0.4, pointRadius: 2 }] }, { plugins: { legend: { display: false }, datalabels: { display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, backgroundColor: '#3498db', color: '#fff', borderRadius: 4, padding: 4 } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#888' } } } });
         }
 
         function updateChart(id, type, data, options) {
-            if (charts[id]) charts[id].destroy();
             const ctx = document.getElementById(id);
-            if (ctx) charts[id] = new Chart(ctx, { type, data, options });
+            if (!ctx) return;
+            if (charts[id]) charts[id].destroy();
+            charts[id] = new Chart(ctx, { type, data, options });
         }
         window.onload = carregarDados;
     </script>
