@@ -105,7 +105,6 @@
 
     <script>
         Chart.register(ChartDataLabels);
-        // André, verifique se esta URL é a da sua ÚLTIMA implantação
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
         
         const MAPA_CATEGORIAS = {
@@ -125,7 +124,7 @@
         async function carregarDados() {
             document.getElementById('loading').style.display = 'flex';
             try {
-                // Cache buster adicionado (?t=...) para garantir dados novos
+                // Cache buster forçado para garantir dados novos da planilha
                 const res = await fetch(`${URL_API}?filtro=tudo&t=${new Date().getTime()}`);
                 todosOsDados = await res.json();
                 popularSeletor(todosOsDados);
@@ -145,7 +144,7 @@
             const meses = [...new Set(dados.map(i => {
                 if(!i.Data) return null;
                 const partes = i.Data.split(' ')[0].split('/');
-                return partes.length >= 3 ? `${partes[1]}/${partes[2]}` : null;
+                return partes.length >= 2 ? `${partes[1]}/${partes[2]}` : null;
             }))].filter(m => m && m !== mesAt).sort().reverse();
 
             let opt = '<option value="mes_atual">Mês Atual</option>';
@@ -156,15 +155,13 @@
         function filtrarERenderizar() {
             const f = document.getElementById('filtroTempo').value;
             const agora = new Date();
-            const mesAtStr = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
+            const mesAlvo = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
             
             const filtrados = todosOsDados.filter(i => {
                 if (!i.Data) return false;
-                if (f === "mes_atual") {
-                    // Verificação mais robusta para o mês atual
-                    return i.Data.includes(mesAtStr) || i.Data.includes(`/${agora.getFullYear().toString().slice(-2)}`);
-                }
-                return i.Data.includes(f);
+                // Ajuste crítico: verifica se o padrão MM/AAAA existe em qualquer lugar da string de data
+                const busca = (f === "mes_atual") ? mesAlvo : f;
+                return i.Data.includes(busca);
             });
 
             renderizarExtrato(filtrados);
@@ -175,14 +172,13 @@
             let tE = 0, tS = 0;
             let htmlR = "", htmlD = "";
             
-            // Ordena por data decrescente (mais recentes primeiro)
-            const dadosOrdenados = [...dados].sort((a, b) => {
-                const dataA = a.Data.split(' ')[0].split('/').reverse().join('');
-                const dataB = b.Data.split(' ')[0].split('/').reverse().join('');
-                return dataB.localeCompare(dataA);
+            // Ordenação DevOps: garantindo que o dado mais recente (inclusive de hoje) apareça primeiro
+            const ordenados = [...dados].sort((a, b) => {
+                const extrairData = (s) => s.split(' ')[0].split('/').reverse().join('');
+                return extrairData(b).localeCompare(extrairData(a));
             });
 
-            dadosOrdenados.forEach(i => {
+            ordenados.forEach(i => {
                 const v = parseFloat(i.Valor) || 0;
                 const ehR = (i.Tipo || i.tipo || "").toLowerCase().trim() === "receita";
                 const card = `
@@ -208,24 +204,19 @@
             }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
         }
 
-        // Lógica de BI simplificada para performance
         function processarBI() {
             const f = document.getElementById('filtroTempo').value;
             const agora = new Date();
-            const mesAtStr = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
+            const busca = (f === "mes_atual") ? `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}` : f;
             
-            const filtrados = todosOsDados.filter(i => {
-                if (!i.Data) return false;
-                return (f === "mes_atual") ? i.Data.includes(mesAtStr) : i.Data.includes(f);
-            });
-
+            const filtrados = todosOsDados.filter(i => i.Data && i.Data.includes(busca));
             const catAgrupada = {}, diaMap = {};
+
             filtrados.forEach(i => {
                 if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
                     const v = parseFloat(i.Valor) || 0;
                     const d = i.Data.split('/')[0];
                     let catFinal = i.Categoria || 'Geral';
-                    
                     for (const [macro, subs] of Object.entries(MAPA_CATEGORIAS)) {
                         if (subs.some(s => catFinal.toLowerCase().includes(s.toLowerCase()))) { catFinal = macro; break; }
                     }
