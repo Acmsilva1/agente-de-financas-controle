@@ -107,16 +107,42 @@
         Chart.register(ChartDataLabels);
         const URL_API = "https://script.google.com/macros/s/AKfycbwbx4Utft2D_59jbBZP6jbqKEIHrxeKnK_MarrksV1dzZ7_CK74Z9ITmb0xN0bRdxeTVA/exec"; 
         
+        // Mapa original
         const MAPA_CATEGORIAS = {
-            'Alimentação': ['mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche', 'picolé', 'biscoito', 'bala', 'doce', 'sorvete', 'café', 'bebida', 'açougue', 'supermercado', 'feira', 'confeitaria', 'marmita', 'delivery', 'vinho', 'cerveja'],
-            'Habitação': ['luz', 'água', 'internet', 'condomínio', 'boleto', 'reforma', 'limpeza', 'aluguel', 'iptu', 'gás', 'móveis', 'decoração', 'manutenção', 'reparos', 'lavanderia'],
-            'Transporte': ['uber', 'gasolina', 'combustível', 'estacionamento', 'pedágio', 'oficina', '99pop', 'ônibus', 'metrô', 'ipva', 'seguro auto', 'troca de óleo', 'pneu', 'licenciamento'],
-            'Lazer': ['cinema', 'viagem', 'netflix', 'bar', 'spotify', 'praia', 'games', 'show', 'teatro', 'hospedagem', 'passagem aérea', 'livro', 'hbomax', 'disney+', 'estádio', 'futebol'],
-            'Saúde': ['farmácia', 'médico', 'academia', 'suplemento', 'dentista', 'exame', 'consulta', 'psicólogo', 'hospital', 'plano de saúde', 'drogaria', 'ótica'],
-            'Compras': ['shopee', 'amazon', 'shein', 'mercado livre', 'roupas', 'eletrônicos', 'eletrodoméstico', 'presente', 'magalu', 'ali-express', 'perfume', 'cosmético', 'tenis', 'acessórios'],
-            'Contas': ['faculdade', 'esporte', 'serviços bancários', 'pensão', 'celular', 'assinatura', 'imposto', 'cartão de crédito', 'empréstimo', 'tarifa', 'seguro', 'anuidade', 'mei', 'irpf'],
-            'Receitas': ['salário', 'ticket', 'vale', 'vendas', 'recebi', 'pix recebido', 'reembolso', 'lucro de bolo', 'rendimento', 'dividendo', 'bônus', 'décimo terceiro', 'extra', 'freelance']
-        };
+    'Alimentação': [
+        'mercado', 'hortifruti', 'restaurante', 'ifood', 'comida', 'padaria', 'lanche', 
+        'picolé', 'biscoito', 'bala', 'doce', 'sorvete', 'café', 'bebida', 'açougue', 
+        'supermercado', 'feira', 'confeitaria', 'marmita', 'delivery', 'vinho', 'cerveja'
+    ],
+    'Habitação': [
+        'luz', 'água', 'internet', 'condomínio', 'boleto', 'reforma', 'limpeza', 
+        'aluguel', 'iptu', 'gás', 'móveis', 'decoração', 'manutenção', 'reparos', 'lavanderia'
+    ],
+    'Transporte': [
+        'uber', 'gasolina', 'combustível', 'estacionamento', 'pedágio', 'oficina', 
+        '99pop', 'ônibus', 'metrô', 'ipva', 'seguro auto', 'troca de óleo', 'pneu', 'licenciamento'
+    ],
+    'Lazer': [
+        'cinema', 'viagem', 'netflix', 'bar', 'spotify', 'praia', 'games', 'show', 
+        'teatro', 'hospedagem', 'passagem aérea', 'livro', 'hbomax', 'disney+', 'estádio', 'futebol'
+    ],
+    'Saúde': [
+        'farmácia', 'médico', 'academia', 'suplemento', 'dentista', 'exame', 
+        'consulta', 'psicólogo', 'hospital', 'plano de saúde', 'drogaria', 'ótica'
+    ],
+    'Compras': [
+        'shopee', 'amazon', 'shein', 'mercado livre', 'roupas', 'eletrônicos', 
+        'eletrodoméstico', 'presente', 'magalu', 'ali-express', 'perfume', 'cosmético', 'tenis', 'acessórios'
+    ],
+    'Contas': [
+        'faculdade', 'esporte', 'serviços bancários', 'pensão', 'celular', 'assinatura', 
+        'imposto', 'cartão de crédito', 'empréstimo', 'tarifa', 'seguro', 'anuidade', 'mei', 'irpf'
+    ],
+    'Receitas': [
+        'salário', 'ticket', 'vale', 'vendas', 'recebi', 'pix recebido', 'reembolso', 
+        'lucro de bolo', 'rendimento', 'dividendo', 'bônus', 'décimo terceiro', 'extra', 'freelance'
+    ]
+}
 
         let todosOsDados = [];
         let charts = {};
@@ -124,61 +150,53 @@
         async function carregarDados() {
             document.getElementById('loading').style.display = 'flex';
             try {
-                // Cache buster forçado para garantir dados novos da planilha
-                const res = await fetch(`${URL_API}?filtro=tudo&t=${new Date().getTime()}`);
+                const res = await fetch(`${URL_API}?filtro=tudo`);
                 todosOsDados = await res.json();
                 popularSeletor(todosOsDados);
                 filtrarERenderizar();
-            } catch (e) { 
-                console.error("Erro na API", e); 
-            } finally { 
-                document.getElementById('loading').style.display = 'none'; 
-            }
+            } catch (e) { console.error("Erro na API", e); } 
+            finally { document.getElementById('loading').style.display = 'none'; }
         }
 
         function popularSeletor(dados) {
             const seletor = document.getElementById('filtroTempo');
             const agora = new Date();
             const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
-            
             const meses = [...new Set(dados.map(i => {
                 if(!i.Data) return null;
                 const partes = i.Data.split(' ')[0].split('/');
-                return partes.length >= 2 ? `${partes[1]}/${partes[2]}` : null;
+                return partes.length >= 3 ? `${partes[1]}/${partes[2]}` : null;
             }))].filter(m => m && m !== mesAt).sort().reverse();
-
             let opt = '<option value="mes_atual">Mês Atual</option>';
             meses.forEach(m => opt += `<option value="${m}">${m}</option>`);
             seletor.innerHTML = opt;
         }
 
+        function mudarAba(aba) {
+            const isFeed = aba === 'feed';
+            document.getElementById('container-feed').style.display = isFeed ? 'block' : 'none';
+            document.getElementById('container-bi').style.display = isFeed ? 'none' : 'block';
+            document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
+            document.getElementById(`tab-${aba}`).classList.add('active');
+            if (!isFeed) setTimeout(processarBI, 100);
+        }
+
         function filtrarERenderizar() {
             const f = document.getElementById('filtroTempo').value;
             const agora = new Date();
-            const mesAlvo = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
-            
-            const filtrados = todosOsDados.filter(i => {
-                if (!i.Data) return false;
-                // Ajuste crítico: verifica se o padrão MM/AAAA existe em qualquer lugar da string de data
-                const busca = (f === "mes_atual") ? mesAlvo : f;
-                return i.Data.includes(busca);
-            });
-
+            const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
+            const filtrados = (f === "mes_atual") 
+                ? todosOsDados.filter(i => i.Data && i.Data.includes(mesAt)) 
+                : todosOsDados.filter(i => i.Data && i.Data.includes(f));
             renderizarExtrato(filtrados);
             if (document.getElementById('container-bi').style.display === 'block') processarBI();
         }
 
+        // Função ajustada para separar cada um no seu quadrado
         function renderizarExtrato(dados) {
             let tE = 0, tS = 0;
             let htmlR = "", htmlD = "";
-            
-            // Ordenação DevOps: garantindo que o dado mais recente (inclusive de hoje) apareça primeiro
-            const ordenados = [...dados].sort((a, b) => {
-                const extrairData = (s) => s.split(' ')[0].split('/').reverse().join('');
-                return extrairData(b).localeCompare(extrairData(a));
-            });
-
-            ordenados.forEach(i => {
+            [...dados].reverse().forEach(i => {
                 const v = parseFloat(i.Valor) || 0;
                 const ehR = (i.Tipo || i.tipo || "").toLowerCase().trim() === "receita";
                 const card = `
@@ -191,54 +209,54 @@
                 </div>`;
                 if(ehR) { tE += v; htmlR += card; } else { tS += v; htmlD += card; }
             });
-
             document.getElementById('saldo-valor').innerText = `R$ ${(tE-tS).toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
             document.getElementById('t-ent').innerText = `R$ ${tE.toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
             document.getElementById('t-sai').innerText = `R$ ${tS.toLocaleString('pt-BR', {maximumFractionDigits: 0})}`;
             document.getElementById('lista-receitas').innerHTML = htmlR || "<p style='text-align:center; font-size:0.8rem;'>Vazio</p>";
             document.getElementById('lista-despesas').innerHTML = htmlD || "<p style='text-align:center; font-size:0.8rem;'>Vazio</p>";
-            
-            updateChart('meuGrafico', 'doughnut', { 
-                labels: ['Receitas', 'Despesas'], 
-                datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }] 
-            }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
+            updateChart('meuGrafico', 'doughnut', { labels: ['Receitas', 'Despesas'], datasets: [{ data: [tE, tS], backgroundColor: ['#2ecc71', '#e74c3c'], borderWidth: 0 }] }, { cutout: '82%', plugins: { datalabels: { display: false }, legend: { display: false } } });
         }
 
+        // RESTAURAÇÃO COMPLETA DA LÓGICA DE BI ORIGINAL
         function processarBI() {
             const f = document.getElementById('filtroTempo').value;
             const agora = new Date();
-            const busca = (f === "mes_atual") ? `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}` : f;
-            
-            const filtrados = todosOsDados.filter(i => i.Data && i.Data.includes(busca));
-            const catAgrupada = {}, diaMap = {};
+            const mesAt = `${String(agora.getMonth() + 1).padStart(2, '0')}/${agora.getFullYear()}`;
+            const filtrados = (f === "mes_atual") ? todosOsDados.filter(i => i.Data && i.Data.includes(mesAt)) : todosOsDados.filter(i => i.Data && i.Data.includes(f));
 
+            const catAgrupada = {}, diaMap = {};
             filtrados.forEach(i => {
                 if ((i.Tipo || i.tipo || "").toLowerCase() === 'despesa') {
                     const v = parseFloat(i.Valor) || 0;
                     const d = i.Data.split('/')[0];
-                    let catFinal = i.Categoria || 'Geral';
+                    const catOriginal = i.Categoria || 'Geral';
+                    let catFinal = null;
                     for (const [macro, subs] of Object.entries(MAPA_CATEGORIAS)) {
-                        if (subs.some(s => catFinal.toLowerCase().includes(s.toLowerCase()))) { catFinal = macro; break; }
+                        if (subs.some(s => catOriginal.toLowerCase().includes(s.toLowerCase()))) { catFinal = macro; break; }
                     }
+                    if(!catFinal) catFinal = catOriginal;
                     catAgrupada[catFinal] = (catAgrupada[catFinal] || 0) + v;
                     diaMap[d] = (diaMap[d] || 0) + v;
                 }
             });
 
             const entradasOrdenadas = Object.entries(catAgrupada).sort((a, b) => b[1] - a[1]);
-            const labelsFinal = []; const valoresFinal = [];
+            const labelsFinal = []; const valoresFinal = []; let outrosSoma = 0;
+            const corpoTabela = document.getElementById('corpo-tabela-gastos');
             let htmlTabela = "";
 
             entradasOrdenadas.forEach(([label, valor], index) => {
                 if (index < 5) { labelsFinal.push(label); valoresFinal.push(valor); }
+                else { outrosSoma += valor; }
                 htmlTabela += `<tr><td class="rank">${index + 1}</td><td>${label}</td><td style="text-align: right; font-weight: bold;">R$ ${valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
             });
-            document.getElementById('corpo-tabela-gastos').innerHTML = htmlTabela || "<tr><td colspan='3' style='text-align:center'>Sem dados</td></tr>";
+            corpoTabela.innerHTML = htmlTabela || "<tr><td colspan='3' style='text-align:center'>Sem dados</td></tr>";
+            if (outrosSoma > 0) { labelsFinal.push("Outros"); valoresFinal.push(outrosSoma); }
 
             updateChart('graficoBarras', 'bar', {
                 labels: labelsFinal,
                 datasets: [{ data: valoresFinal, backgroundColor: '#ff4081', borderRadius: 6 }]
-            }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff', anchor: 'end', align: 'right', formatter: v => `R$ ${v.toFixed(0)}`, font: { weight: 'bold', size: 10 } } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } } });
+            }, { indexAxis: 'y', plugins: { legend: { display: false }, datalabels: { color: '#fff', anchor: 'end', align: 'right', formatter: v => `R$ ${v.toFixed(0)}`, font: { weight: 'bold', size: 10 } } }, scales: { x: { display: false }, y: { ticks: { color: '#fff' }, grid: { display: false } } }, layout: { padding: { right: 40 } } });
 
             const dias = Object.keys(diaMap).sort((a,b) => parseInt(a) - parseInt(b));
             let acc = 0;
@@ -246,14 +264,6 @@
                 labels: dias,
                 datasets: [{ data: dias.map(d => { acc += diaMap[d]; return acc; }), borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', fill: true, tension: 0.4, pointRadius: 2 }]
             }, { plugins: { legend: { display: false }, datalabels: { display: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1, backgroundColor: '#3498db', color: '#fff', borderRadius: 4, padding: 4, formatter: v => `R$ ${v.toFixed(0)}` } }, scales: { y: { display: false }, x: { grid: { display: false }, ticks: { color: '#888' } } } });
-        }
-
-        function mudarAba(aba) {
-            document.getElementById('container-feed').style.display = (aba === 'feed') ? 'block' : 'none';
-            document.getElementById('container-bi').style.display = (aba === 'bi') ? 'block' : 'none';
-            document.querySelectorAll('.btn-nav').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab-${aba}`).classList.add('active');
-            if (aba === 'bi') setTimeout(processarBI, 100);
         }
 
         function updateChart(id, type, data, options) {
